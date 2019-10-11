@@ -1,3 +1,26 @@
+## slam_toolbox (dashing) - 2.0.2-1
+
+The packages in the `slam_toolbox` repository were released into the `dashing` distro by running `/usr/bin/bloom-release slam_toolbox --track dashing --rosdistro dashing --edit` on `Fri, 11 Oct 2019 22:33:07 -0000`
+
+The `slam_toolbox` package was released.
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: https://github.com/SteveMacenski/slam_toolbox-release.git
+- rosdistro version: `2.0.1-1`
+- old version: `2.0.1-1`
+- new version: `2.0.2-1`
+
+Versions of tools used:
+
+- bloom version: `0.8.0`
+- catkin_pkg version: `0.4.13`
+- rosdep version: `0.16.1`
+- rosdistro version: `0.7.5`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (dashing) - 2.0.1-1
 
 The packages in the `slam_toolbox` repository were released into the `dashing` distro by running `/usr/bin/bloom-release slam_toolbox --track dashing --rosdistro dashing --new-track` on `Fri, 11 Oct 2019 21:17:05 -0000`
