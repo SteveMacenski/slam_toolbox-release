@@ -20,8 +20,9 @@
 #define SLAM_TOOLBOX_PANEL_H
 
 // ROS
-#include <ros/ros.h>
-#include <rviz/panel.h>
+#include "rclcpp/rclcpp.hpp"
+#include "rviz_common/panel.hpp"
+#include "slam_toolbox/toolbox_msgs.hpp"
 // STL
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,15 +39,17 @@
 #include <QRadioButton>
 
 #include <thread>
-
-// msgs
-#include "slam_toolbox/toolbox_msgs.hpp"
+#include <chrono>
+#include <memory>
 
 class QLineEdit;
 class QSpinBox;
 class QComboBox;
 
-#include <rviz/panel.h>
+namespace rviz_common
+{
+  class VisualizationManager;
+};
 
 namespace slam_toolbox
 {
@@ -59,16 +62,17 @@ enum ContinueMappingType
   LOCALIZE_CMT = 3
 };
 
-class SlamToolboxPlugin : public rviz::Panel
+class SlamToolboxPlugin : public rviz_common::Panel
 {
   Q_OBJECT
 
 public:
-  SlamToolboxPlugin(QWidget* parent = 0);
+  SlamToolboxPlugin(QWidget * parent);
+  SlamToolboxPlugin() {SlamToolboxPlugin(nullptr);};
+
   ~SlamToolboxPlugin();
 
 public Q_SLOTS:
-protected Q_SLOTS:
   void ClearChanges();
   void SaveChanges();
   void SaveMap();
@@ -135,9 +139,19 @@ protected:
 
   QFrame* _line;
 
-  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_measurements, _load_submap_for_merging, _merge, _serialize, _load_map;
+  rclcpp::Node::SharedPtr ros_node_;
+  rclcpp::Client<slam_toolbox::srv::Clear>::SharedPtr _clearChanges;
+  rclcpp::Client<slam_toolbox::srv::LoopClosure>::SharedPtr _saveChanges;
+  rclcpp::Client<slam_toolbox::srv::SaveMap>::SharedPtr _saveMap;
+  rclcpp::Client<slam_toolbox::srv::ClearQueue>::SharedPtr _clearQueue;
+  rclcpp::Client<slam_toolbox::srv::ToggleInteractive>::SharedPtr _interactive;
+  rclcpp::Client<slam_toolbox::srv::Pause>::SharedPtr _pause_measurements;
+  rclcpp::Client<slam_toolbox::srv::AddSubmap>::SharedPtr _load_submap_for_merging;
+  rclcpp::Client<slam_toolbox::srv::MergeMaps>::SharedPtr _merge;
+  rclcpp::Client<slam_toolbox::srv::SerializePoseGraph>::SharedPtr _serialize;
+  rclcpp::Client<slam_toolbox::srv::DeserializePoseGraph>::SharedPtr _load_map;
 
-  std::thread* _thread;
+  std::unique_ptr<std::thread> _thread;
 
   ContinueMappingType _match_type;
 };

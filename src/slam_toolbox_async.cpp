@@ -23,51 +23,32 @@ namespace slam_toolbox
 {
 
 /*****************************************************************************/
-AsynchronousSlamToolbox::AsynchronousSlamToolbox(ros::NodeHandle& nh)
-: SlamToolbox(nh)
+AsynchronousSlamToolbox::AsynchronousSlamToolbox(rclcpp::NodeOptions options)
+: SlamToolbox(options)
 /*****************************************************************************/
 {
-  std::string filename;
-  geometry_msgs::Pose2D pose;
-  bool dock = false;
-  if (shouldStartWithPoseGraph(filename, pose, dock))
-  {
-    slam_toolbox::DeserializePoseGraph::Request req;
-    slam_toolbox::DeserializePoseGraph::Response resp;
-    req.initial_pose = pose;
-    req.filename = filename;
-    if (dock)
-    {
-      req.match_type =
-        slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
-    }
-    else
-    {
-      req.match_type =
-        slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
-    }
-    deserializePoseGraphCallback(req, resp);
-  }
+  loadPoseGraphByParams();
 }
 
 /*****************************************************************************/
 void AsynchronousSlamToolbox::laserCallback(
-  const sensor_msgs::LaserScan::ConstPtr& scan)
+  sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
   // no odom info
-  karto::Pose2 pose;
+  Pose2 pose;
   if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
+    RCLCPP_WARN(get_logger(), "Failed to compute odom pose");
     return;
   }
 
   // ensure the laser can be used
-  karto::LaserRangeFinder* laser = getLaser(scan);
+  LaserRangeFinder * laser = getLaser(scan);
 
   if(!laser)
   {
-    ROS_WARN_THROTTLE(5., "Failed to create laser device for"
+    RCLCPP_WARN(get_logger(), "Failed to create laser device for"
       " %s; discarding scan", scan->header.frame_id.c_str());
     return;
   }
@@ -78,44 +59,19 @@ void AsynchronousSlamToolbox::laserCallback(
 
 /*****************************************************************************/
 bool AsynchronousSlamToolbox::deserializePoseGraphCallback(
-  slam_toolbox::DeserializePoseGraph::Request& req,
-  slam_toolbox::DeserializePoseGraph::Response& resp)
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
+  std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp)
 /*****************************************************************************/
 {
-  if (req.match_type == procType::LOCALIZE_AT_POSE)
+  if (req->match_type == procType::LOCALIZE_AT_POSE)
   {
-    ROS_ERROR("Requested a localization deserialization "
+    RCLCPP_WARN(get_logger(), "Requested a localization deserialization "
       "in non-localization mode.");
     return false;
   }
 
-  return SlamToolbox::deserializePoseGraphCallback(req, resp);
+  return SlamToolbox::deserializePoseGraphCallback(request_header, req, resp);
 }
 
 } // end namespace
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "slam_toolbox");
-  ros::NodeHandle nh("~");
-  ros::spinOnce();
-
-  int stack_size;
-  if (nh.getParam("stack_size_to_use", stack_size))
-  {
-    ROS_INFO("Node using stack size %i", (int)stack_size);
-    const rlim_t max_stack_size = stack_size;
-    struct rlimit stack_limit;
-    getrlimit(RLIMIT_STACK, &stack_limit);
-    if (stack_limit.rlim_cur < stack_size)
-    {
-      stack_limit.rlim_cur = stack_size;
-    }
-    setrlimit(RLIMIT_STACK, &stack_limit);
-  }
-
-  slam_toolbox::AsynchronousSlamToolbox sst(nh);
-
-  ros::spin();
-  return 0;
-}
