@@ -24,32 +24,32 @@
 namespace slam_toolbox
 {
 
+using namespace ::karto;
+
 class LocalizationSlamToolbox : public SlamToolbox
 {
 public:
-  LocalizationSlamToolbox(rclcpp::NodeOptions options);
+  LocalizationSlamToolbox(ros::NodeHandle& nh);
   ~LocalizationSlamToolbox() {};
 
 protected:
   virtual void laserCallback(
-    sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
+    const sensor_msgs::LaserScan::ConstPtr& scan) override final;
   void localizePoseCallback(
-    const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+    const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
   virtual bool serializePoseGraphCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Request> req,
-    std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Response> resp) override final;
+    slam_toolbox::SerializePoseGraph::Request& req,
+    slam_toolbox::SerializePoseGraph::Response& resp) override final;
   virtual bool deserializePoseGraphCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override final;
+    slam_toolbox::DeserializePoseGraph::Request& req,
+    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
 
-  virtual LocalizedRangeScan* addScan(LaserRangeFinder * laser,
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-    Pose2 & pose) override final;
+  virtual LocalizedRangeScan* addScan(karto::LaserRangeFinder* laser,
+    const sensor_msgs::LaserScan::ConstPtr& scan,
+    karto::Pose2& karto_pose) override final;
 
-  std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped> > localization_pose_sub_;
+  ros::Subscriber localization_pose_sub_;
 };
 
 }

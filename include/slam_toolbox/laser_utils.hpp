@@ -21,15 +21,16 @@
 
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "ros/ros.h"
 #include "slam_toolbox/toolbox_types.hpp"
 #include "tf2/utils.h"
+#include "karto_sdk/Mapper.h"
 
 namespace laser_utils
 {
 
 // Convert a laser scan to a vector of readings
-inline std::vector<double> scanToReadings(const sensor_msgs::msg::LaserScan & scan, const bool & inverted)
+inline std::vector<double> scanToReadings(const sensor_msgs::LaserScan& scan, const bool& inverted)
 {
   std::vector<double> readings;
 
@@ -57,13 +58,13 @@ class LaserMetadata
 public:
   LaserMetadata();
   ~LaserMetadata();
-  LaserMetadata(karto::LaserRangeFinder * lsr, bool invert);
+  LaserMetadata(karto::LaserRangeFinder* lsr, bool invert);
   bool isInverted() const;
-  karto::LaserRangeFinder * getLaser();
-  void invertScan(sensor_msgs::msg::LaserScan & scan) const;
+  karto::LaserRangeFinder* getLaser();
+  void invertScan(sensor_msgs::LaserScan& scan) const;
 
 private:
-  karto::LaserRangeFinder * laser;
+  karto::LaserRangeFinder* laser;
   bool inverted;
 };
 
@@ -71,32 +72,32 @@ private:
 class LaserAssistant
 {
 public:
-  LaserAssistant(rclcpp::Node::SharedPtr node, tf2_ros::Buffer * tf, const std::string & base_frame);
+  LaserAssistant(ros::NodeHandle& nh, tf2_ros::Buffer* tf, const std::string& base_frame);
   ~LaserAssistant();
-  LaserMetadata toLaserMetadata(sensor_msgs::msg::LaserScan scan);
+  LaserMetadata toLaserMetadata(sensor_msgs::LaserScan scan);
 
 private:
-  karto::LaserRangeFinder * makeLaser(const double& mountingYaw);
-  bool isInverted(double & mountingYaw);
+  karto::LaserRangeFinder* makeLaser(const double& mountingYaw);
+  bool isInverted(double& mountingYaw);
 
-  rclcpp::Node::SharedPtr node_;
-  tf2_ros::Buffer * tf_;
-  sensor_msgs::msg::LaserScan scan_;
+  ros::NodeHandle nh_;
+  tf2_ros::Buffer* tf_;
+  sensor_msgs::LaserScan scan_;
   std::string frame_, base_frame_;
-  geometry_msgs::msg::TransformStamped laser_pose_;
+  geometry_msgs::TransformStamped laser_pose_;
 };
 
 // Hold some scans and utilities around them
 class ScanHolder
 {
 public:
-  ScanHolder(std::map<std::string, laser_utils::LaserMetadata> & lasers);
+  ScanHolder(std::map<std::string, laser_utils::LaserMetadata>& lasers);
   ~ScanHolder();
-  sensor_msgs::msg::LaserScan getCorrectedScan(const int & id);
-  void addScan(const sensor_msgs::msg::LaserScan scan);
+  sensor_msgs::LaserScan getCorrectedScan(const int& id);
+  void addScan(const sensor_msgs::LaserScan scan);
 
 private:
-  std::unique_ptr<std::vector<sensor_msgs::msg::LaserScan> > current_scans_;
+  std::unique_ptr<std::vector<sensor_msgs::LaserScan> > current_scans_;
   std::map<std::string, laser_utils::LaserMetadata>& lasers_;
 };
 

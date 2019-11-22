@@ -22,18 +22,17 @@
 namespace vis_utils
 {
 
-inline visualization_msgs::msg::Marker toMarker(
-  const std::string & frame,
-  const std::string & ns,
-  const double & scale,
-  rclcpp::Node::SharedPtr node)
+inline visualization_msgs::Marker toMarker(
+  const std::string& frame,
+  const std::string& ns,
+  const double& scale)
 {
-  visualization_msgs::msg::Marker marker;
+  visualization_msgs::Marker marker;
 
   marker.header.frame_id = frame;
-  marker.header.stamp = node->now();
+  marker.header.stamp = ros::Time::now();
   marker.ns = ns;
-  marker.type = visualization_msgs::msg::Marker::SPHERE;
+  marker.type = visualization_msgs::Marker::SPHERE;
   marker.pose.position.z = 0.0;
   marker.pose.orientation.w = 1.;
   marker.scale.x = scale;
@@ -43,60 +42,59 @@ inline visualization_msgs::msg::Marker toMarker(
   marker.color.g = 0;
   marker.color.b = 0.0;
   marker.color.a = 1.;
-  marker.action = visualization_msgs::msg::Marker::ADD;
-  marker.lifetime = rclcpp::Duration(0.);
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.lifetime = ros::Duration(0.);
 
   return marker;
 }
 
-// TODO(stevemacenski): Need interactive markers ported to ROS2
-// inline visualization_msgs::msg::InteractiveMarker toInteractiveMarker(
-//   visualization_msgs::msg::Marker & marker,
-//   const double & scale)
-// {
-//   // marker basics
-//   visualization_msgs::msg::InteractiveMarker int_marker;
-//   int_marker.header.frame_id = marker.header.frame_id;
-//   int_marker.header.stamp = node->now();
-//   int_marker.name = std::to_string(marker.id);
-//   int_marker.pose.orientation.w = 1.;
-//   int_marker.pose.position.x = marker.pose.position.x;
-//   int_marker.pose.position.y = marker.pose.position.y;
-//   int_marker.scale = scale;
+inline visualization_msgs::InteractiveMarker toInteractiveMarker(
+  visualization_msgs::Marker& marker,
+  const double& scale)
+{
+  // marker basics
+  visualization_msgs::InteractiveMarker int_marker;
+  int_marker.header.frame_id = marker.header.frame_id;
+  int_marker.header.stamp = ros::Time::now();
+  int_marker.name = std::to_string(marker.id);
+  int_marker.pose.orientation.w = 1.;
+  int_marker.pose.position.x = marker.pose.position.x;
+  int_marker.pose.position.y = marker.pose.position.y;
+  int_marker.scale = scale;
 
-//   // translate control
-//   visualization_msgs::msg::InteractiveMarkerControl control;
-//   control.orientation_mode =
-//     visualization_msgs::msg::InteractiveMarkerControl::FIXED;
-//   control.always_visible = true;
-//   control.orientation.w = 0;
-//   control.orientation.x = 0.7071;
-//   control.orientation.y = 0;
-//   control.orientation.z = 0.7071;
-//   control.interaction_mode =
-//     visualization_msgs::msg::InteractiveMarkerControl::MOVE_PLANE;
-//   control.markers.push_back( marker );
-//   int_marker.controls.push_back( control );
+  // translate control
+  visualization_msgs::InteractiveMarkerControl control;
+  control.orientation_mode =
+    visualization_msgs::InteractiveMarkerControl::FIXED;
+  control.always_visible = true;
+  control.orientation.w = 0;
+  control.orientation.x = 0.7071;
+  control.orientation.y = 0;
+  control.orientation.z = 0.7071;
+  control.interaction_mode =
+    visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
+  control.markers.push_back( marker );
+  int_marker.controls.push_back( control );
 
-//   // rotate control
-//   visualization_msgs::msg::InteractiveMarkerControl control_rot;
-//   control_rot.orientation_mode =
-//     visualization_msgs::msg::InteractiveMarkerControl::FIXED;
-//   control_rot.always_visible = true;
-//   control_rot.orientation.w = 0;
-//   control_rot.orientation.x = 0.7071;
-//   control_rot.orientation.y = 0;
-//   control_rot.orientation.z = 0.7071;
-//   control_rot.interaction_mode =
-//     visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
-//   int_marker.controls.push_back( control_rot );
+  // rotate control
+  visualization_msgs::InteractiveMarkerControl control_rot;
+  control_rot.orientation_mode =
+    visualization_msgs::InteractiveMarkerControl::FIXED;
+  control_rot.always_visible = true;
+  control_rot.orientation.w = 0;
+  control_rot.orientation.x = 0.7071;
+  control_rot.orientation.y = 0;
+  control_rot.orientation.z = 0.7071;
+  control_rot.interaction_mode =
+    visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
+  int_marker.controls.push_back( control_rot );
   
-//   return int_marker;
-// }
+  return int_marker;
+}
 
 inline void toNavMap(
-  const karto::OccupancyGrid * occ_grid,
-  nav_msgs::msg::OccupancyGrid & map)
+  const karto::OccupancyGrid* occ_grid,
+  nav_msgs::OccupancyGrid& map)
 {
   // Translate to ROS format
   kt_int32s width = occ_grid->GetWidth();
@@ -131,6 +129,9 @@ inline void toNavMap(
           break;
         case karto::GridStates_Free:
           map.data[MAP_IDX(map.info.width, x, y)] = 0;
+          break;
+        default:
+          ROS_WARN("Encountered unknown cell value at %d, %d", x, y);
           break;
       }
     }

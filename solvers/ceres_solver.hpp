@@ -6,16 +6,14 @@
 #ifndef KARTO_CERESSOLVER_H
 #define KARTO_CERESSOLVER_H
 
-#include <rclcpp/rclcpp.hpp>
-#include <std_srvs/srv/empty.hpp>
+#include <ros/ros.h>
+#include <std_srvs/Empty.h>
 
 #include <vector>
 #include <unordered_map>
 #include <utility>
 
-// god... getting this to work in ROS2 was a real pain
-#include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
-
+#include <karto_sdk/Mapper.h>
 #include <ceres/ceres.h>
 #include <ceres/local_parameterization.h>
 #include <cmath>
@@ -37,11 +35,9 @@ public:
 
 public:
   virtual const karto::ScanSolver::IdPoseVector& GetCorrections() const; //Get corrected poses after optimization
-
   virtual void Compute(); //Solve
   virtual void Clear(); //Resets the corrections
   virtual void Reset(); //Resets the solver plugin clean
-  virtual void Configure(rclcpp::Node::SharedPtr node);
 
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex); //Adds a node to the solver
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge); //Adds a constraint to the solver
@@ -69,9 +65,6 @@ private:
   std::unordered_map<size_t, ceres::ResidualBlockId>* blocks_;
   std::unordered_map<int, Eigen::Vector3d>::iterator first_node_;
   boost::mutex nodes_mutex_;
-
-  // ros
-  rclcpp::Node::SharedPtr node_;
 };
 
 }

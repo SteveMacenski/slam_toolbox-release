@@ -31,8 +31,7 @@
 #include <algorithm>
 #include <chrono>
 
-#include "Karto.h"
-#include <rclcpp/rclcpp.hpp>
+#include <karto_sdk/Karto.h>
 
 #include "nanoflann_adaptors.h"
 
@@ -964,8 +963,6 @@ namespace karto
      * Solve!
      */
     virtual void Compute() = 0;
-
-    virtual void Configure(rclcpp::Node::SharedPtr node) = 0;
 
     /**
      * Get corrected poses after optimization

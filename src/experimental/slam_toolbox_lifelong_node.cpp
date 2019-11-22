@@ -1,7 +1,6 @@
 /*
  * slam_toolbox
- * Copyright Work Modifications (c) 2018, Simbe Robotics, Inc.
- * Copyright Work Modifications (c) 2019, Steve Macenski
+ * Copyright (c) 2019, Samsung Research America
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -21,30 +20,26 @@
 
 int main(int argc, char** argv)
 {
-  rclcpp::init(argc, argv);
+  ros::init(argc, argv, "slam_toolbox");
+  ros::NodeHandle nh("~");
+  ros::spinOnce();
 
-  int stack_size = 40000000;
+  int stack_size;
+  if (nh.getParam("stack_size_to_use", stack_size))
   {
-    auto temp_node = std::make_shared<rclcpp::Node>("slam_toolbox");
-    temp_node->declare_parameter("stack_size_to_use");
-    if (temp_node->get_parameter("stack_size_to_use", stack_size))
+    ROS_INFO("Node using stack size %i", (int)stack_size);
+    const rlim_t max_stack_size = stack_size;
+    struct rlimit stack_limit;
+    getrlimit(RLIMIT_STACK, &stack_limit);
+    if (stack_limit.rlim_cur < stack_size)
     {
-      RCLCPP_INFO(temp_node->get_logger(), "Node using stack size %i", (int)stack_size);
-      const rlim_t max_stack_size = stack_size;
-      struct rlimit stack_limit;
-      getrlimit(RLIMIT_STACK, &stack_limit);
-      if (stack_limit.rlim_cur < stack_size)
-      {
-        stack_limit.rlim_cur = stack_size;
-      }
-      setrlimit(RLIMIT_STACK, &stack_limit);
+      stack_limit.rlim_cur = stack_size;
     }
+    setrlimit(RLIMIT_STACK, &stack_limit);
   }
 
-  rclcpp::NodeOptions options;
-  auto lifelong_node = std::make_shared<slam_toolbox::LifelongSlamToolbox>(options);
-  lifelong_node->configure();
-  rclcpp::spin(lifelong_node->get_node_base_interface());
-  rclcpp::shutdown();
+  slam_toolbox::LifelongSlamToolbox llst(nh);
+
+  ros::spin();
   return 0;
 }

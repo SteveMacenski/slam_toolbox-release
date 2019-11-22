@@ -19,9 +19,10 @@
 #ifndef SLAM_TOOLBOX_SLAM_MAPPER_H_
 #define SLAM_TOOLBOX_SLAM_MAPPER_H_
 
-#include "rclcpp/rclcpp.hpp"
+#include "ros/ros.h"
+#include "karto_sdk/Mapper.h"
+#include "karto_sdk/Karto.h"
 #include "tf2/utils.h"
-#include "slam_toolbox/toolbox_types.hpp"
 
 namespace mapper_utils
 {
@@ -35,15 +36,15 @@ public:
   ~SMapper();
 
   // get occupancy grid from scans
-  karto::OccupancyGrid* getOccupancyGrid(const double & resolution);
+  karto::OccupancyGrid* getOccupancyGrid(const double& resolution);
 
   // convert Karto pose to TF pose
-  tf2::Transform toTfPose(const karto::Pose2 & pose) const;
+  tf2::Transform toTfPose(const karto::Pose2& pose) const;
 
   // convert TF pose to karto pose
-  karto::Pose2 toKartoPose(const tf2::Transform & pose) const;
+  karto::Pose2 toKartoPose(const tf2::Transform& pose) const;
 
-  void configure(const rclcpp::Node::SharedPtr & node);
+  void configure(const ros::NodeHandle& nh);
   void Reset();
 
   // // processors
@@ -52,8 +53,8 @@ public:
   // kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
   // kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
 
-  void setMapper(karto::Mapper * mapper);
-  karto::Mapper * getMapper();
+  void setMapper(karto::Mapper* mapper);
+  karto::Mapper* getMapper();
 
 protected:
   std::unique_ptr<karto::Mapper> mapper_;
