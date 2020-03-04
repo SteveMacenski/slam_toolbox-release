@@ -1,3 +1,26 @@
+## slam_toolbox (eloquent) - 2.1.1-1
+
+The packages in the `slam_toolbox` repository were released into the `eloquent` distro by running `/usr/local/bin/bloom-release --rosdistro eloquent --track eloquent slam_toolbox --edit` on `Wed, 04 Mar 2020 22:16:41 -0000`
+
+The `slam_toolbox` package was released.
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `2.1.1-1`
+
+Versions of tools used:
+
+- bloom version: `0.9.0`
+- catkin_pkg version: `0.4.15`
+- rosdep version: `0.18.0`
+- rosdistro version: `0.8.0`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (dashing) - 2.0.3-1
 
 The packages in the `slam_toolbox` repository were released into the `dashing` distro by running `/usr/local/bin/bloom-release --rosdistro dashing --track dashing slam_toolbox --edit` on `Wed, 04 Mar 2020 22:09:49 -0000`
