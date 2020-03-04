@@ -1,0 +1,12 @@
+Source: ros-eloquent-slam-toolbox
+Section: misc
+Priority: optional
+Maintainer: Steve Macenski <stevenmacenski@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), libboost-all-dev, libceres-dev, libeigen3-dev, liblapack-dev, libqt5core5a, libqt5widgets5, libsuitesparse-dev, libtbb-dev, qtbase5-dev, ros-eloquent-ament-cmake, ros-eloquent-ament-cmake-gtest, ros-eloquent-builtin-interfaces, ros-eloquent-launch, ros-eloquent-launch-testing, ros-eloquent-message-filters, ros-eloquent-nav-msgs, ros-eloquent-nav2-map-server, ros-eloquent-pluginlib, ros-eloquent-rclcpp, ros-eloquent-rosidl-default-generators, ros-eloquent-rviz-common, ros-eloquent-rviz-default-plugins, ros-eloquent-rviz-rendering, ros-eloquent-sensor-msgs, ros-eloquent-std-msgs, ros-eloquent-std-srvs, ros-eloquent-tf2, ros-eloquent-tf2-geometry-msgs, ros-eloquent-tf2-ros, ros-eloquent-tf2-sensor-msgs, ros-eloquent-visualization-msgs, ros-eloquent-ros-workspace, ros-eloquent-rmw-connext-cpp, ros-eloquent-rmw-fastrtps-cpp, ros-eloquent-rmw-implementation, ros-eloquent-rmw-opensplice-cpp, ros-eloquent-rosidl-typesupport-connext-c, ros-eloquent-rosidl-typesupport-connext-cpp, ros-eloquent-rosidl-typesupport-opensplice-c, ros-eloquent-rosidl-typesupport-opensplice-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-eloquent-slam-toolbox
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libboost-all-dev, libceres-dev, libeigen3-dev, liblapack-dev, libqt5core5a, libqt5widgets5, libsuitesparse-dev, libtbb-dev, ros-eloquent-builtin-interfaces, ros-eloquent-message-filters, ros-eloquent-nav-msgs, ros-eloquent-nav2-map-server, ros-eloquent-pluginlib, ros-eloquent-rclcpp, ros-eloquent-rosidl-default-generators, ros-eloquent-rviz-common, ros-eloquent-rviz-default-plugins, ros-eloquent-rviz-rendering, ros-eloquent-sensor-msgs, ros-eloquent-std-msgs, ros-eloquent-std-srvs, ros-eloquent-tf2, ros-eloquent-tf2-geometry-msgs, ros-eloquent-tf2-ros, ros-eloquent-tf2-sensor-msgs, ros-eloquent-visualization-msgs, ros-eloquent-ros-workspace
+Description: This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
