@@ -24,13 +24,11 @@ find_package(catkin REQUIRED
     tf2_ros
     visualization_msgs
     pluginlib
-    message_generation
-    std_srvs
-    std_msgs
     tf2_geometry_msgs
     interactive_markers
     rviz
     map_server
+    slam_toolbox_msgs
 )
 
 find_package(PkgConfig REQUIRED)
@@ -56,27 +54,6 @@ include_directories(include ${catkin_INCLUDE_DIRS}
 
 add_definitions(${EIGEN3_DEFINITIONS})
 
-add_service_files(DIRECTORY srvs
-  FILES
-  Pause.srv
-  ClearQueue.srv
-  ToggleInteractive.srv
-  Clear.srv
-  SaveMap.srv
-  LoopClosure.srv
-  MergeMaps.srv
-  AddSubmap.srv
-  DeserializePoseGraph.srv
-  SerializePoseGraph.srv
-)
-
-generate_messages(
-  DEPENDENCIES
-  std_srvs
-  std_msgs
-  geometry_msgs
-)
-
 catkin_package(
     INCLUDE_DIRS
       include
@@ -100,10 +77,9 @@ catkin_package(
       visualization_msgs
       pluginlib
       message_runtime
-      std_srvs
-      std_msgs
       tf2_geometry_msgs
       interactive_markers
+      slam_toolbox_msgs
     DEPENDS
       EIGEN3
       Boost
@@ -144,32 +120,30 @@ qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
 set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
 set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
 add_library(SlamToolboxPlugin ${SOURCE_FILES} ${HEADER_FILES})
-add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
 #### Tool lib for mapping
 add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
-add_dependencies(toolbox_common ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(toolbox_common kartoSlamToolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 #### Mapping executibles
 add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
-target_link_libraries(async_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(async_slam_toolbox toolbox_common kartoSlamToolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp )
 target_link_libraries(async_slam_toolbox_node async_slam_toolbox)
 
 add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
-target_link_libraries(sync_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(sync_slam_toolbox toolbox_common kartoSlamToolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp )
 target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
 
 add_library(localization_slam_toolbox src/slam_toolbox_localization.cpp)
-target_link_libraries(localization_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(localization_slam_toolbox toolbox_common kartoSlamToolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_executable(localization_slam_toolbox_node src/slam_toolbox_localization_node.cpp )
 target_link_libraries(localization_slam_toolbox_node localization_slam_toolbox)
 
 add_library(lifelong_slam_toolbox src/experimental/slam_toolbox_lifelong.cpp)
-target_link_libraries(lifelong_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(lifelong_slam_toolbox toolbox_common kartoSlamToolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_executable(lifelong_slam_toolbox_node src/experimental/slam_toolbox_lifelong_node.cpp )
 target_link_libraries(lifelong_slam_toolbox_node lifelong_slam_toolbox)
 
