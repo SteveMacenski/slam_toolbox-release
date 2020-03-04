@@ -1,0 +1,12 @@
+Source: ros-melodic-slam-toolbox-msgs
+Section: misc
+Priority: optional
+Maintainer: Steve Macenski <stevenmacenski@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), ros-melodic-catkin, ros-melodic-geometry-msgs, ros-melodic-message-generation, ros-melodic-std-msgs, ros-melodic-std-srvs
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-melodic-slam-toolbox-msgs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-melodic-geometry-msgs, ros-melodic-message-runtime, ros-melodic-std-msgs, ros-melodic-std-srvs
+Description: This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
