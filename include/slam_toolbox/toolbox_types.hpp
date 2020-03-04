@@ -22,13 +22,13 @@
 #include <map>
 #include <vector>
 
-#include "tf/transform_datatypes.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "sensor_msgs/LaserScan.h"
-#include "geometry_msgs/PoseWithCovarianceStamped.h"
+#include "tf2/transform_datatypes.h"
+
+// god... getting this to work in ROS2 was a real pain
+#include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_msgs.hpp"
-#include "karto_sdk/Mapper.h"
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
@@ -39,18 +39,18 @@ namespace toolbox_types
 // object containing a scan pointer and a position
 struct PosedScan
 {
-  PosedScan(sensor_msgs::LaserScan::ConstPtr scan_in, karto::Pose2 pose_in) :
+  PosedScan(sensor_msgs::msg::LaserScan::ConstSharedPtr scan_in, karto::Pose2 pose_in) :
              scan(scan_in), pose(pose_in) 
   {
   }
-  sensor_msgs::LaserScan::ConstPtr scan;
+  sensor_msgs::msg::LaserScan::ConstSharedPtr scan;
   karto::Pose2 pose;
 };
 
 // object containing a vertex pointer and an updated score
 struct ScoredVertex
 {
-  ScoredVertex(karto::Vertex<karto::LocalizedRangeScan>* vertex, double score)
+  ScoredVertex(karto::Vertex<karto::LocalizedRangeScan> * vertex, double score)
   : vertex_(vertex), score_(score)
   {
   }
@@ -60,12 +60,12 @@ struct ScoredVertex
     return score_;
   }
 
-  karto::Vertex<karto::LocalizedRangeScan>* GetVertex()
+  karto::Vertex<karto::LocalizedRangeScan> * GetVertex()
   {
     return vertex_;
   }
 
-  karto::Vertex<karto::LocalizedRangeScan>* vertex_;
+  karto::Vertex<karto::LocalizedRangeScan> * vertex_;
   double score_;
 };
 
@@ -119,7 +119,7 @@ typedef std::map<karto::Name, std::map<int, karto::Vertex<karto::LocalizedRangeS
 typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
 typedef std::map<int, karto::Vertex<karto::LocalizedRangeScan>*> ScanMap;
 typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;
-typedef slam_toolbox::DeserializePoseGraph::Request procType;
+typedef slam_toolbox::srv::DeserializePoseGraph::Request procType;
 
 typedef std::unordered_map<int, Eigen::Vector3d>::iterator GraphIterator;
 typedef std::unordered_map<int, Eigen::Vector3d>::const_iterator ConstGraphIterator;

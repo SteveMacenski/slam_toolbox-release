@@ -20,31 +20,38 @@
 #include "slam_toolbox/serialization.hpp"
 
 /*****************************************************************************/
-MergeMapsKinematic::MergeMapsKinematic() : num_submaps_(0), nh_("map_merging")
+MergeMapsKinematic::MergeMapsKinematic()
+: Node("map_merging")
 /*****************************************************************************/
 {
-  ROS_INFO("MergeMapsKinematic: Starting up!");
-  setup();
+  RCLCPP_INFO(get_logger(), "MergeMapsKinematic: Starting up!");
+  num_submaps_ = 0;
 }
 
 /*****************************************************************************/
-void MergeMapsKinematic::setup()
+void MergeMapsKinematic::configure()
 /*****************************************************************************/
 {
-  nh_.param("resolution", resolution_, 0.05);
-  sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1, true));
-  sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>(
-    "/map_metadata", 1, true));
-  ssMap_ = nh_.advertiseService("merge_submaps",
-    &MergeMapsKinematic::mergeMapCallback, this);
-  ssSubmap_ = nh_.advertiseService("add_submap",
-    &MergeMapsKinematic::addSubmapCallback, this);
+  resolution_ = 0.05;
+  resolution_ = this->declare_parameter("resolution", resolution_);
+
+  sstS_.push_back(this->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    "/map", rclcpp::QoS(1)));
+  sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
+    "/map_metadata", rclcpp::QoS(1)));
+
+  ssMap_ = this->create_service<slam_toolbox::srv::MergeMaps>("merge_submaps",
+    std::bind(&MergeMapsKinematic::mergeMapCallback, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3));
+  ssSubmap_ = this->create_service<slam_toolbox::srv::AddSubmap>("add_submap",
+    std::bind(&MergeMapsKinematic::addSubmapCallback, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3));
   
-  tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>();
+  tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(shared_from_this());
   
-  interactive_server_ = 
-    std::make_unique<interactive_markers::InteractiveMarkerServer>(
-    "merge_maps_tool","",true);
+  // interactive_server_ = 
+  //   std::make_unique<interactive_markers::InteractiveMarkerServer>(
+  //   "merge_maps_tool","",true);
 }
 
 /*****************************************************************************/
@@ -55,22 +62,24 @@ MergeMapsKinematic::~MergeMapsKinematic()
 
 /*****************************************************************************/
 bool MergeMapsKinematic::addSubmapCallback(
-  slam_toolbox::AddSubmap::Request& req,
-  slam_toolbox::AddSubmap::Response& resp)
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<slam_toolbox::srv::AddSubmap::Request> req,
+  std::shared_ptr<slam_toolbox::srv::AddSubmap::Response> resp)
 /*****************************************************************************/
 {
-  std::unique_ptr<karto::Mapper> mapper = std::make_unique<karto::Mapper>();
-  std::unique_ptr<karto::Dataset> dataset = std::make_unique<karto::Dataset>();
+  std::unique_ptr<Mapper> mapper = std::make_unique<Mapper>();
+  std::unique_ptr<Dataset> dataset = std::make_unique<Dataset>();
 
-  if (!serialization::read(req.filename, *mapper, *dataset))
+  if (!serialization::read(req->filename, *mapper,
+    *dataset, shared_from_this()))
   {
-    ROS_ERROR("addSubmapCallback: Failed to read "
-      "file: %s.", req.filename.c_str());
+    RCLCPP_ERROR(get_logger(), "addSubmapCallback: Failed to read "
+      "file: %s.", req->filename.c_str());
     return true;
   }
   
   // we know the position because we put it there before any scans
-  karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(
+  LaserRangeFinder* laser = dynamic_cast<LaserRangeFinder*>(
     dataset->GetLasers()[0]);
   dataset->Add(laser, true);
   dataset_vec_.push_back(std::move(dataset));
@@ -81,25 +90,25 @@ bool MergeMapsKinematic::addSubmapCallback(
     lasers_[laser->GetName().GetName()] = laserMeta;
   }
 
-  karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
+  LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
   scans_vec_.push_back(scans);
   num_submaps_++;
 
   // create and publish map with marker that will move the map around
-  sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>(
-    "/map_"+std::to_string(num_submaps_), 1, true));
-  sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>(
-    "/map_metadata_" + std::to_string(num_submaps_), 1, true));
+  sstS_.push_back(this->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    "/map_"+std::to_string(num_submaps_), rclcpp::QoS(1)));
+  sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
+    "/map_metadata_"+std::to_string(num_submaps_), rclcpp::QoS(1)));
   sleep(1.0);
 
-  nav_msgs::GetMap::Response map;
-  nav_msgs::OccupancyGrid& og = map.map; 
+  nav_msgs::srv::GetMap::Response map;
+  nav_msgs::msg::OccupancyGrid & og = map.map; 
   try
   {
     kartoToROSOccupancyGrid(scans, map);
-  } catch (const karto::Exception& e)
+  } catch (const Exception & e)
   {
-    ROS_WARN("Failed to build grid to add submap, Exception: %s",
+    RCLCPP_WARN(get_logger(), "Failed to build grid to add submap, Exception: %s",
       e.GetErrorMessage().c_str());
     return false;
   }
@@ -112,16 +121,16 @@ bool MergeMapsKinematic::addSubmapCallback(
     0.));
   og.info.origin.position.x = - (og.info.width * og.info.resolution / 2.0);
   og.info.origin.position.y = - (og.info.height * og.info.resolution / 2.0);
-  og.header.stamp = ros::Time::now();
+  og.header.stamp = this->now();
   og.header.frame_id = "map_"+std::to_string(num_submaps_);
-  sstS_[num_submaps_].publish(og);
-  sstmS_[num_submaps_].publish(og.info);
+  sstS_[num_submaps_]->publish(og);
+  sstmS_[num_submaps_]->publish(og.info);
 
-  geometry_msgs::TransformStamped msg;
-  tf2::convert(transform, msg.transform);
+  geometry_msgs::msg::TransformStamped msg;
+  msg.transform = tf2::toMsg(transform);
   msg.child_frame_id = "/map_"+std::to_string(num_submaps_);
   msg.header.frame_id = "/map";
-  msg.header.stamp = ros::Time::now();
+  msg.header.stamp = this->now();
   tfB_->sendTransform(msg);
 
   submap_marker_transform_[num_submaps_] = 
@@ -132,27 +141,29 @@ bool MergeMapsKinematic::addSubmapCallback(
     transform.getOrigin().getY(),0.);
 
   // create an interactive marker for the base of this frame and attach it
-  visualization_msgs::Marker m = 
-    vis_utils::toMarker("map", "merge_maps_tool", 2.0);
+  visualization_msgs::msg::Marker m = 
+    vis_utils::toMarker("map", "merge_maps_tool", 2.0, shared_from_this());
   m.pose.position.x =  transform.getOrigin().getX();
   m.pose.position.y =  transform.getOrigin().getY();
   m.id = num_submaps_;
 
-  visualization_msgs::InteractiveMarker int_marker =
-    vis_utils::toInteractiveMarker(m, 2.4);
-  interactive_server_->insert(int_marker,
-    boost::bind(&MergeMapsKinematic::processInteractiveFeedback, this, _1));
-  interactive_server_->applyChanges();
+  // TODO(stevemacenski): waiting on interactive markers to be ported
+  // visualization_msgs::InteractiveMarker int_marker =
+  //   vis_utils::toInteractiveMarker(m, 2.4);
+  // interactive_server_->insert(int_marker,
+  //   boost::bind(&MergeMapsKinematic::processInteractiveFeedback, this, _1));
+  // interactive_server_->applyChanges();
 
-  ROS_INFO("Map %s was loaded into topic %s!", req.filename.c_str(),
+  RCLCPP_INFO(get_logger(),
+    "Map %s was loaded into topic %s!", req->filename.c_str(),
     ("/map_"+std::to_string(num_submaps_)).c_str());
   return true;
 }
 
 /*****************************************************************************/
-karto::Pose2 MergeMapsKinematic::applyCorrection(const
-  karto::Pose2& pose,
-  const tf2::Transform& submap_correction)
+Pose2 MergeMapsKinematic::applyCorrection(const
+  Pose2 & pose,
+  const tf2::Transform & submap_correction)
 /*****************************************************************************/
 {
   tf2::Transform pose_tf, pose_corr;
@@ -161,51 +172,51 @@ karto::Pose2 MergeMapsKinematic::applyCorrection(const
   pose_tf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
   pose_tf.setRotation(q);
   pose_corr = submap_correction * pose_tf;
-  return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(),
+  return Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(),
     tf2::getYaw(pose_corr.getRotation()));
 }
 
 /*****************************************************************************/
-karto::Vector2<kt_double> MergeMapsKinematic::applyCorrection(const
-  karto::Vector2<kt_double>&  pose,
-  const tf2::Transform& submap_correction)
+Vector2<kt_double> MergeMapsKinematic::applyCorrection(const
+  Vector2<kt_double> &  pose,
+  const tf2::Transform & submap_correction)
 /*****************************************************************************/
 {
   tf2::Transform pose_tf, pose_corr;
   pose_tf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
   pose_tf.setRotation(tf2::Quaternion(0.,0.,0.,1.0));
   pose_corr = submap_correction * pose_tf;
-  return karto::Vector2<kt_double>(pose_corr.getOrigin().x(),
+  return Vector2<kt_double>(pose_corr.getOrigin().x(),
     pose_corr.getOrigin().y());
 }
 
 /*****************************************************************************/
 void MergeMapsKinematic::transformScan(LocalizedRangeScansIt iter,
-  tf2::Transform& submap_correction)
+  tf2::Transform & submap_correction)
 /*****************************************************************************/
 {
   // TRANSFORM BARYCENTERR POSE
-  const karto::Pose2 bary_center_pose = (*iter)->GetBarycenterPose();
+  const Pose2 bary_center_pose = (*iter)->GetBarycenterPose();
   auto bary_center_pose_corr = 
     applyCorrection(bary_center_pose, submap_correction);
   (*iter)->SetBarycenterPose(bary_center_pose_corr);
 
   // TRANSFORM BOUNDING BOX POSITIONS
-  karto::BoundingBox2 bbox = (*iter)->GetBoundingBox();
-  const karto::Vector2<kt_double> bbox_min_corr = 
+  BoundingBox2 bbox = (*iter)->GetBoundingBox();
+  const Vector2<kt_double> bbox_min_corr = 
     applyCorrection(bbox.GetMinimum(), submap_correction);
   bbox.SetMinimum(bbox_min_corr);
-  const karto::Vector2<kt_double> bbox_max_corr = 
+  const Vector2<kt_double> bbox_max_corr = 
     applyCorrection(bbox.GetMaximum(), submap_correction);
   bbox.SetMaximum(bbox_max_corr);
   (*iter)->SetBoundingBox(bbox);
 
   // TRANSFORM UNFILTERED POINTS USED
-  karto::PointVectorDouble UPR_vec = (*iter)->GetPointReadings();
-  for(karto::PointVectorDouble::iterator it_upr = UPR_vec.begin();
+  PointVectorDouble UPR_vec = (*iter)->GetPointReadings();
+  for(PointVectorDouble::iterator it_upr = UPR_vec.begin();
     it_upr != UPR_vec.end(); ++it_upr)
   {
-    const karto::Vector2<kt_double> upr_corr = applyCorrection(
+    const Vector2<kt_double> upr_corr = applyCorrection(
       *it_upr, submap_correction);
     it_upr->SetX(upr_corr.GetX());
     it_upr->SetY(upr_corr.GetY());
@@ -213,31 +224,32 @@ void MergeMapsKinematic::transformScan(LocalizedRangeScansIt iter,
   (*iter)->SetPointReadings(UPR_vec);
 
   // TRANSFORM CORRECTED POSE
-  const karto::Pose2 corrected_pose = (*iter)->GetCorrectedPose();
-  karto::Pose2 karto_robot_pose_corr = applyCorrection(
+  const Pose2 corrected_pose = (*iter)->GetCorrectedPose();
+  Pose2 robot_pose_corr = applyCorrection(
     corrected_pose, submap_correction);
-  (*iter)->SetCorrectedPose(karto_robot_pose_corr);
+  (*iter)->SetCorrectedPose(robot_pose_corr);
   kt_bool dirty = false;
   (*iter)->SetIsDirty(dirty);
 
   // TRANSFORM ODOM POSE
-  karto::Pose2 odom_pose = (*iter)->GetOdometricPose();
-  karto::Pose2 karto_robot_pose_odom = applyCorrection(
+  Pose2 odom_pose = (*iter)->GetOdometricPose();
+  Pose2 robot_pose_odom = applyCorrection(
     odom_pose, submap_correction);
-  (*iter)->SetOdometricPose(karto_robot_pose_odom);
+  (*iter)->SetOdometricPose(robot_pose_odom);
 }
 
 /*****************************************************************************/
 bool MergeMapsKinematic::mergeMapCallback(
-  slam_toolbox::MergeMaps::Request& req,
-  slam_toolbox::MergeMaps::Response& resp)
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<slam_toolbox::srv::MergeMaps::Request> req,
+  std::shared_ptr<slam_toolbox::srv::MergeMaps::Response> resp)
 /*****************************************************************************/
 {
-  ROS_INFO("Merging maps!");
+  RCLCPP_INFO(get_logger(), "Merging maps!");
 
   // transform all the scans into the new global map coordinates 
   int id = 0;
-  karto::LocalizedRangeScanVector transformed_scans;
+  LocalizedRangeScanVector transformed_scans;
   for(LocalizedRangeScansVecIt it_LRV = scans_vec_.begin();
     it_LRV != scans_vec_.end(); ++it_LRV)
   {
@@ -252,34 +264,36 @@ bool MergeMapsKinematic::mergeMapCallback(
   }
 
   // create the map
-  nav_msgs::GetMap::Response map;
+  nav_msgs::srv::GetMap::Response map;
   try
   {
     kartoToROSOccupancyGrid(transformed_scans, map);
-  } catch (const karto::Exception& e)
+  } catch (const Exception & e)
   {
-    ROS_WARN("Failed to build grid to merge maps together, Exception: %s",
+    RCLCPP_WARN(get_logger(), 
+      "Failed to build grid to merge maps together, Exception: %s",
       e.GetErrorMessage().c_str());
   }
 
   // publish
-  map.map.header.stamp = ros::Time::now();
+  map.map.header.stamp = this->now();
   map.map.header.frame_id = "map";
-  sstS_[0].publish(map.map);
-  sstmS_[0].publish(map.map.info);
+  sstS_[0]->publish(map.map);
+  sstmS_[0]->publish(map.map.info);
 }
 
 /*****************************************************************************/
 void MergeMapsKinematic::kartoToROSOccupancyGrid(
-  const karto::LocalizedRangeScanVector& scans,
-  nav_msgs::GetMap::Response& map)
+  const LocalizedRangeScanVector & scans,
+  nav_msgs::srv::GetMap::Response& map)
 /*****************************************************************************/
 {
-  karto::OccupancyGrid* occ_grid = NULL;
-  occ_grid = karto::OccupancyGrid::CreateFromScans(scans, resolution_);
+  OccupancyGrid * occ_grid = NULL;
+  occ_grid = OccupancyGrid::CreateFromScans(scans, resolution_);
   if (!occ_grid)
   {
-    ROS_INFO("MergeMapsKinematic: Could not make Karto occupancy grid.");
+    RCLCPP_INFO(get_logger(),
+      "MergeMapsKinematic: Could not make occupancy grid.");
   }
   else
   {
@@ -293,18 +307,18 @@ void MergeMapsKinematic::kartoToROSOccupancyGrid(
 
 /*****************************************************************************/
 void MergeMapsKinematic::processInteractiveFeedback(const
-  visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+  visualization_msgs::msg::InteractiveMarkerFeedback::SharedPtr feedback)
 /*****************************************************************************/
 {
   const int id = std::stoi(feedback->marker_name,nullptr,10);
 
   if (feedback->event_type ==
-      visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP && 
+      visualization_msgs::msg::InteractiveMarkerFeedback::MOUSE_UP && 
       feedback->mouse_point_valid)
   {
-    tfScalar yaw = tf2::getYaw(feedback->pose.orientation);
+    tf2Scalar yaw = tf2::getYaw(feedback->pose.orientation);
     tf2::Quaternion quat(0.,0.,0.,1.0);
-    tf2::convert(feedback->pose.orientation, quat); // relative
+    tf2::fromMsg(feedback->pose.orientation, quat); // relative
 
     tf2::Transform previous_submap_correction;
     previous_submap_correction.setIdentity();
@@ -322,11 +336,11 @@ void MergeMapsKinematic::processInteractiveFeedback(const
       submap_locations_[id](1), 0.));
     new_submap_location.setRotation(quat);
 
-    geometry_msgs::TransformStamped msg;
-    tf2::convert(new_submap_location, msg.transform);
+    geometry_msgs::msg::TransformStamped msg;
+    msg.transform = tf2::toMsg(new_submap_location);
     msg.child_frame_id = "/map_"+std::to_string(id);
     msg.header.frame_id = "/map";
-    msg.header.stamp = ros::Time::now();
+    msg.header.stamp = this->now();
     tfB_->sendTransform(msg);
 
     submap_marker_transform_[id] = submap_marker_transform_[id] *
@@ -334,11 +348,11 @@ void MergeMapsKinematic::processInteractiveFeedback(const
   }
 
   if (feedback->event_type ==
-    visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
+    visualization_msgs::msg::InteractiveMarkerFeedback::POSE_UPDATE)
   {
-    tfScalar yaw = tf2::getYaw(feedback->pose.orientation);
+    tf2Scalar yaw = tf2::getYaw(feedback->pose.orientation);
     tf2::Quaternion quat(0.,0.,0.,1.0);
-    tf2::convert(feedback->pose.orientation, quat); // relative
+    tf2::fromMsg(feedback->pose.orientation, quat); // relative
 
     // add the map_N frame there
     tf2::Transform new_submap_location;
@@ -346,11 +360,11 @@ void MergeMapsKinematic::processInteractiveFeedback(const
       feedback->pose.position.y, 0.));
     new_submap_location.setRotation(quat);
 
-    geometry_msgs::TransformStamped msg;
-    tf2::convert(new_submap_location, msg.transform);
+    geometry_msgs::msg::TransformStamped msg;
+    msg.transform = tf2::toMsg(new_submap_location);
     msg.child_frame_id = "/map_"+std::to_string(id);
     msg.header.frame_id = "/map";
-    msg.header.stamp = ros::Time::now();
+    msg.header.stamp = this->now();
     tfB_->sendTransform(msg);
   }
 }
@@ -359,8 +373,10 @@ void MergeMapsKinematic::processInteractiveFeedback(const
 int main(int argc, char** argv)
 /*****************************************************************************/
 {
-  ros::init(argc, argv, "merge_maps_kinematic");
-  MergeMapsKinematic mmk;
-  ros::spin();
+  rclcpp::init(argc, argv);
+  auto merging_node = std::make_shared<MergeMapsKinematic>();
+  merging_node->configure();
+  rclcpp::spin(merging_node->get_node_base_interface());
+  rclcpp::shutdown();
   return 0;
 }
