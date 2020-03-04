@@ -1,0 +1,12 @@
+Source: ros-dashing-slam-toolbox
+Section: misc
+Priority: optional
+Maintainer: Steve Macenski <stevenmacenski@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), libboost-all-dev, libceres-dev, libeigen3-dev, liblapack-dev, libqt5core5a, libqt5widgets5, libsuitesparse-dev, libtbb-dev, qtbase5-dev, ros-dashing-ament-cmake, ros-dashing-ament-cmake-gtest, ros-dashing-builtin-interfaces, ros-dashing-launch, ros-dashing-launch-testing, ros-dashing-message-filters, ros-dashing-nav-msgs, ros-dashing-nav2-map-server, ros-dashing-pluginlib, ros-dashing-rclcpp, ros-dashing-rosidl-default-generators, ros-dashing-rviz-common, ros-dashing-rviz-default-plugins, ros-dashing-rviz-rendering, ros-dashing-sensor-msgs, ros-dashing-std-msgs, ros-dashing-std-srvs, ros-dashing-tf2, ros-dashing-tf2-geometry-msgs, ros-dashing-tf2-ros, ros-dashing-tf2-sensor-msgs, ros-dashing-visualization-msgs, ros-dashing-ros-workspace, ros-dashing-rmw-connext-cpp, ros-dashing-rmw-fastrtps-cpp, ros-dashing-rmw-implementation, ros-dashing-rmw-opensplice-cpp, ros-dashing-rosidl-typesupport-connext-c, ros-dashing-rosidl-typesupport-connext-cpp, ros-dashing-rosidl-typesupport-opensplice-c, ros-dashing-rosidl-typesupport-opensplice-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-dashing-slam-toolbox
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libboost-all-dev, libceres-dev, libeigen3-dev, liblapack-dev, libqt5core5a, libqt5widgets5, libsuitesparse-dev, libtbb-dev, ros-dashing-builtin-interfaces, ros-dashing-message-filters, ros-dashing-nav-msgs, ros-dashing-nav2-map-server, ros-dashing-pluginlib, ros-dashing-rclcpp, ros-dashing-rosidl-default-generators, ros-dashing-rviz-common, ros-dashing-rviz-default-plugins, ros-dashing-rviz-rendering, ros-dashing-sensor-msgs, ros-dashing-std-msgs, ros-dashing-std-srvs, ros-dashing-tf2, ros-dashing-tf2-geometry-msgs, ros-dashing-tf2-ros, ros-dashing-tf2-sensor-msgs, ros-dashing-visualization-msgs, ros-dashing-ros-workspace
+Description: This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
