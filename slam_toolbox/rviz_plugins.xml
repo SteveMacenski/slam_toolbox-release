@@ -1,4 +1,4 @@
-<library path="libslam_toolbox_rviz">
+<library path="libSlamToolboxPlugin">
     <class name="slam_toolbox::SlamToolboxPlugin"
            type="slam_toolbox::SlamToolboxPlugin"
            base_class_type="rviz::Panel">

@@ -40,16 +40,7 @@
 #include <thread>
 
 // msgs
-#include "slam_toolbox_msgs/AddSubmap.h"
-#include "slam_toolbox_msgs/Clear.h"
-#include "slam_toolbox_msgs/ClearQueue.h"
-#include "slam_toolbox_msgs/DeserializePoseGraph.h"
-#include "slam_toolbox_msgs/LoopClosure.h"
-#include "slam_toolbox_msgs/MergeMaps.h"
-#include "slam_toolbox_msgs/Pause.h"
-#include "slam_toolbox_msgs/SaveMap.h"
-#include "slam_toolbox_msgs/SerializePoseGraph.h"
-#include "slam_toolbox_msgs/ToggleInteractive.h"
+#include "slam_toolbox/toolbox_msgs.hpp"
 
 class QLineEdit;
 class QSpinBox;
