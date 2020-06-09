@@ -1,3 +1,28 @@
+## slam_toolbox (melodic) - 1.1.4-1
+
+The packages in the `slam_toolbox` repository were released into the `melodic` distro by running `/usr/bin/bloom-release slam_toolbox --track melodic --rosdistro melodic` on `Tue, 09 Jun 2020 18:58:15 -0000`
+
+These packages were released:
+- `slam_toolbox`
+- `slam_toolbox_msgs`
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: https://github.com/SteveMacenski/slam_toolbox-release.git
+- rosdistro version: `1.1.3-1`
+- old version: `1.1.3-1`
+- new version: `1.1.4-1`
+
+Versions of tools used:
+
+- bloom version: `0.9.1`
+- catkin_pkg version: `0.4.20`
+- rosdep version: `0.18.0`
+- rosdistro version: `0.8.0`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (melodic) - 1.1.3-1
 
 The packages in the `slam_toolbox` repository were released into the `melodic` distro by running `/usr/local/bin/bloom-release --rosdistro melodic --track melodic slam_toolbox --edit` on `Wed, 04 Mar 2020 22:22:53 -0000`
