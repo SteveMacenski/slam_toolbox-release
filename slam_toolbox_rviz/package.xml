@@ -1,5 +1,5 @@
 <package format="2">
-  <name>slam_toolbox_msgs</name>
+  <name>slam_toolbox_rviz</name>
   <description>
      This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
   </description>
@@ -10,15 +10,11 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>message_generation</build_depend>
-
-  <depend>std_msgs</depend>
-  <depend>std_srvs</depend>
-  <depend>geometry_msgs</depend>
+  <depend>rviz</depend>
+  <depend>slam_toolbox_msgs</depend>
   
-  <exec_depend>message_runtime</exec_depend>
-
   <export>
+    <rviz plugin="${prefix}/rviz_plugins.xml"/>
   </export>
 
 </package>
