@@ -1,0 +1,12 @@
+Source: ros-noetic-slam-toolbox-rviz
+Section: misc
+Priority: optional
+Maintainer: Steve Macenski <stevenmacenski@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), ros-noetic-catkin, ros-noetic-rviz, ros-noetic-slam-toolbox-msgs
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-noetic-slam-toolbox-rviz
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-noetic-rviz, ros-noetic-slam-toolbox-msgs
+Description: This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
