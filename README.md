@@ -1,3 +1,26 @@
+## slam_toolbox (foxy) - 2.3.0-1
+
+The packages in the `slam_toolbox` repository were released into the `foxy` distro by running `/usr/bin/bloom-release slam_toolbox --track foxy --rosdistro foxy --new-track` on `Wed, 08 Jul 2020 23:17:21 -0000`
+
+The `slam_toolbox` package was released.
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `2.3.0-1`
+
+Versions of tools used:
+
+- bloom version: `0.9.7`
+- catkin_pkg version: `0.4.22`
+- rosdep version: `0.19.0`
+- rosdistro version: `0.8.2`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (noetic) - 1.5.4-1
 
 The packages in the `slam_toolbox` repository were released into the `noetic` distro by running `/usr/bin/bloom-release slam_toolbox --track noetic --rosdistro noetic` on `Fri, 26 Jun 2020 18:58:56 -0000`
