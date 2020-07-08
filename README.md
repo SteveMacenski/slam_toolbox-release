@@ -2,7 +2,11 @@
 
 | DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) | [![Build Status](https://img.shields.io/docker/pulls/stevemacenski/slam-toolbox.svg?maxAge=2592000)](https://hub.docker.com/r/stevemacenski/slam-toolbox) |
 |-----|----|----|
-| **Build Farm** | [![Build Status](http://build.ros.org/buildStatus/icon?job=Mdev__slam_toolbox__ubuntu_bionic_amd64)](http://build.ros.org/view/Kbin_uX64/job/Mdev__slam_toolbox__ubuntu_bionic_amd64/) | N/A |
+| **Build Farm** | [![Build Status](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/) | N/A |
+
+NOTE: ROS2 Port of Slam Toolbox is incomplete. Known on-going work:
+- Interactive markers need to be ported to ROS2 and integrated
+- Panel plugins need to be ported to ROS2 to test and ship the rviz plugin
 
 We've received feedback from users and have robots operating in the following environments with SLAM Toolbox:
 - Retail
@@ -10,12 +14,13 @@ We've received feedback from users and have robots operating in the following en
 - Libraries
 - Research
 
+It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS2 Navigation here](https://ros-planning.github.io/navigation2/tutorials/docs/navigation2_with_slam.html).
+
 [![IMAGE ALT TEXT](https://user-images.githubusercontent.com/14944147/74176653-f69beb80-4bec-11ea-906a-a233541a6064.png)](https://vimeo.com/378682207)
 
 # Introduction
 
-
-Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/) and in his free time. 
+Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/), maintained whil at Samsung Research, and largely in his free time. 
 
 This project contains the ability to do most everything any other available SLAM library, both free and paid, and more. This includes:
 - Ordinary point-and-shoot 2D SLAM mobile robotics folks expect (start, map, save pgm file) with some nice built in utilities like saving maps
@@ -30,7 +35,7 @@ This project contains the ability to do most everything any other available SLAM
 - Map serialization and lossless data storage
 - ... more but those are the highlights 
 
-For running on live production robots, I recommend using the snap or from the build farm: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
+For running on live production robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
 
 This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 200,000 sq.ft. building in synchronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
@@ -147,7 +152,7 @@ The following are the services/topics that are exposed for use. See the rviz plu
 
 ## Subscribed topics
 
-| scan  | `sensor_msgs/LaserScan` | the input scan from your laser to utilize | 
+| /scan  | `sensor_msgs/LaserScan` | the input scan from your laser to utilize | 
 |-----|----|----|
 | **tf** | N/A | a valid transform from your configured odom_frame to base_frame |
 
@@ -196,6 +201,8 @@ The following settings and options are exposed to you. My default configuration 
 `map_frame` - Map frame
 
 `base_frame` - Base frame
+
+`scan_topic` - scan topic, *absolute* path, ei `/scan` not `scan`
 
 `map_file_name` - Name of the pose-graph file to load on startup if available
 
@@ -291,11 +298,15 @@ ROSDep will take care of the major things
 rosdep install -q -y -r --from-paths src --ignore-src
 ```
 
-Also released in Melodic / Dashing to the ROS build farm to install debians.
+Or install via apt
 
-Run your catkin build procedure of choice.
+```
+apt install ros-eloquent-slam-toolbox
+```
 
-You can run via `roslaunch slam_toolbox online_sync.launch`
+Run your colcon build procedure of choice.
+
+You can run via `ros2 launch slam_toolbox online_sync_launch.py`
 
 # Etc
 
@@ -308,7 +319,7 @@ In order to do some operations quickly for continued mapping and localization, I
 
 Snap are completely isolated containerized packages that one can run through the Canonical organization on a large number of Linux distributions. They're similar to Docker containers but it doesn't share the kernel or any of the libraries, and rather has everything internal as essentially a seperate partitioned operating system based on Ubuntu Core. 
 
-We package up slam toolbox in this way for a nice multiple-on speed up in execution from a couple of pretty nuanced reasons in this particular project, but generally speaking you shouldn't expect a speedup from a snap. There's a generate snap script in the `snap` directory to create a snap.
+We package up slam toolbox in this way for a nice multiple-on speed up in execution from a couple of pretty nuanced reasons in this particular project, but generally speaking you shouldn't expect a speedup from a snap. 
 
 Since Snaps are totally isolated and there's no override flags like in Docker, there's only a couple of fixed directories that both the snap and the host system can write and read from, including SNAP_COMMON (usually in `/var/snap/[snap name]/common`). Therefore, this is the place that if you're serializing and deserializing maps, you need to have them accessible to that directory. 
 
