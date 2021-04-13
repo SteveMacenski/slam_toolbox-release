@@ -16,18 +16,20 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_LOOP_CLOSURE_ASSISTANT_H_
-#define SLAM_TOOLBOX_LOOP_CLOSURE_ASSISTANT_H_
+#ifndef SLAM_TOOLBOX__LOOP_CLOSURE_ASSISTANT_HPP_
+#define SLAM_TOOLBOX__LOOP_CLOSURE_ASSISTANT_HPP_
 
+#include <thread>
+#include <string>
 #include <functional>
-#include <boost/thread.hpp>
+#include <memory>
 #include <map>
 
-#include "rclcpp/rclcpp.hpp"
-// #include "interactive_markers/interactive_marker_server.h"
-// #include "interactive_markers/menu_handler.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2/utils.h"
+#include "rclcpp/rclcpp.hpp"
+#include "interactive_markers/interactive_marker_server.hpp"
+#include "interactive_markers/menu_handler.hpp"
 
 #include "slam_toolbox/toolbox_types.hpp"
 #include "slam_toolbox/laser_utils.hpp"
@@ -36,44 +38,58 @@
 namespace loop_closure_assistant
 {
 
-// TODO(stevemacenski): Need interactive markers ported to ROS2
-
-using namespace ::toolbox_types;
+using namespace ::toolbox_types;  // NOLINT
 
 class LoopClosureAssistant
 {
 public:
-  LoopClosureAssistant(rclcpp::Node::SharedPtr node, karto::Mapper * mapper, laser_utils::ScanHolder * scan_holder, PausedState & state, ProcessType & processor_type);
+  LoopClosureAssistant(
+    rclcpp::Node::SharedPtr node, karto::Mapper * mapper,
+    laser_utils::ScanHolder * scan_holder, PausedState & state,
+    ProcessType & processor_type);
 
-  // void clearMovedNodes();
-  // void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void clearMovedNodes();
+  void processInteractiveFeedback(
+    const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback);
   void publishGraph();
 
 private:
-  // bool manualLoopClosureCallback(slam_toolbox::LoopClosure::Request& req, slam_toolbox::LoopClosure::Response& resp);
-  // bool clearChangesCallback(slam_toolbox::Clear::Request& req, slam_toolbox::Clear::Response& resp);
-  // bool interactiveModeCallback(slam_toolbox::ToggleInteractive::Request  &req, slam_toolbox::ToggleInteractive::Response &resp);
-  // void moveNode(const int& id, const Eigen::Vector3d& pose);
-  // void addMovedNodes(const int& id, Eigen::Vector3d vec);
+  bool manualLoopClosureCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<slam_toolbox::srv::LoopClosure::Request> req, 
+    std::shared_ptr<slam_toolbox::srv::LoopClosure::Response> resp);
+  bool clearChangesCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<slam_toolbox::srv::Clear::Request> req, 
+    std::shared_ptr<slam_toolbox::srv::Clear::Response> resp);
+  bool interactiveModeCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<slam_toolbox::srv::ToggleInteractive::Request>  req,
+    std::shared_ptr<slam_toolbox::srv::ToggleInteractive::Response> resp);
+
+  void moveNode(const int& id, const Eigen::Vector3d& pose);
+  void addMovedNodes(const int& id, Eigen::Vector3d vec);
 
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   laser_utils::ScanHolder * scan_holder_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
-  // rclcpp::Publisher::SharedPtr<sensor_msgs::msg::LaserScan> scan_publisher_;
-  // ros::ServiceServer ssClear_manual_, ssLoopClosure_, ssInteractive_;
-  // boost::mutex moved_nodes_mutex_;
-  // std::map<int, Eigen::Vector3d> moved_nodes_;
+  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_publisher_;
+  rclcpp::Service<slam_toolbox::srv::Clear>::SharedPtr ssClear_manual_;
+  rclcpp::Service<slam_toolbox::srv::LoopClosure>::SharedPtr ssLoopClosure_;
+  rclcpp::Service<slam_toolbox::srv::ToggleInteractive>::SharedPtr ssInteractive_;
+  boost::mutex moved_nodes_mutex_;
+  std::map<int, Eigen::Vector3d> moved_nodes_;
   karto::Mapper * mapper_;
   karto::ScanSolver * solver_;
-  // std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
-  // boost::mutex interactive_mutex_;
-  // bool interactive_mode_, enable_interactive_mode_;
+  std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
+  boost::mutex interactive_mutex_;
+  bool interactive_mode_, enable_interactive_mode_;
   rclcpp::Node::SharedPtr node_;
   std::string map_frame_;
   PausedState & state_;
   ProcessType & processor_type_;
 };
 
-}  // end namespace
+}   // namespace loop_closure_assistant
 
-#endif //SLAM_TOOLBOX_LOOP_CLOSURE_ASSISTANT_H_
+#endif  // SLAM_TOOLBOX__LOOP_CLOSURE_ASSISTANT_HPP_

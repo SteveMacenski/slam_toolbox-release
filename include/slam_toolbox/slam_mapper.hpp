@@ -16,9 +16,10 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_SLAM_MAPPER_H_
-#define SLAM_TOOLBOX_SLAM_MAPPER_H_
+#ifndef SLAM_TOOLBOX__SLAM_MAPPER_HPP_
+#define SLAM_TOOLBOX__SLAM_MAPPER_HPP_
 
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/utils.h"
 #include "slam_toolbox/toolbox_types.hpp"
@@ -26,7 +27,7 @@
 namespace mapper_utils
 {
 
-using namespace ::karto;
+using namespace ::karto;  // NOLINT
 
 class SMapper
 {
@@ -35,7 +36,7 @@ public:
   ~SMapper();
 
   // get occupancy grid from scans
-  karto::OccupancyGrid* getOccupancyGrid(const double & resolution);
+  karto::OccupancyGrid * getOccupancyGrid(const double & resolution);
 
   // convert Karto pose to TF pose
   tf2::Transform toTfPose(const karto::Pose2 & pose) const;
@@ -51,15 +52,16 @@ public:
   // kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
   // kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
   // kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
-  void clearLocalizationBuffer();
 
   void setMapper(karto::Mapper * mapper);
   karto::Mapper * getMapper();
+
+  void clearLocalizationBuffer();
 
 protected:
   std::unique_ptr<karto::Mapper> mapper_;
 };
 
-} // end namespace
+}  // namespace mapper_utils
 
-#endif //SLAM_TOOLBOX_SLAM_MAPPER_H_
+#endif   // SLAM_TOOLBOX__SLAM_MAPPER_HPP_

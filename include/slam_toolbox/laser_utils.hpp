@@ -16,10 +16,13 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_LASER_UTILS_H_
-#define SLAM_TOOLBOX_LASER_UTILS_H_
+#ifndef SLAM_TOOLBOX__LASER_UTILS_HPP_
+#define SLAM_TOOLBOX__LASER_UTILS_HPP_
 
 #include <string>
+#include <memory>
+#include <map>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
@@ -29,27 +32,28 @@ namespace laser_utils
 {
 
 // Convert a laser scan to a vector of readings
-inline std::vector<double> scanToReadings(const sensor_msgs::msg::LaserScan & scan, const bool & inverted)
+inline std::vector<double> scanToReadings(
+  const sensor_msgs::msg::LaserScan & scan,
+  const bool & inverted)
 {
   std::vector<double> readings;
 
-  if (inverted)
-  {
-    for(std::vector<float>::const_reverse_iterator it = scan.ranges.rbegin(); it != scan.ranges.rend(); ++it)
+  if (inverted) {
+    for (std::vector<float>::const_reverse_iterator it = scan.ranges.rbegin();
+      it != scan.ranges.rend(); ++it)
     {
       readings.push_back(*it);
     }
-  }
-  else 
-  {
-    for(std::vector<float>::const_iterator it = scan.ranges.begin(); it != scan.ranges.end(); ++it)
+  } else {
+    for (std::vector<float>::const_iterator it = scan.ranges.begin(); it != scan.ranges.end();
+      ++it)
     {
       readings.push_back(*it);
     }
   }
 
   return readings;
-};
+}
 
 // Store laser scanner information
 class LaserMetadata
@@ -71,12 +75,14 @@ private:
 class LaserAssistant
 {
 public:
-  LaserAssistant(rclcpp::Node::SharedPtr node, tf2_ros::Buffer * tf, const std::string & base_frame);
+  LaserAssistant(
+    rclcpp::Node::SharedPtr node, tf2_ros::Buffer * tf,
+    const std::string & base_frame);
   ~LaserAssistant();
   LaserMetadata toLaserMetadata(sensor_msgs::msg::LaserScan scan);
 
 private:
-  karto::LaserRangeFinder * makeLaser(const double& mountingYaw);
+  karto::LaserRangeFinder * makeLaser(const double & mountingYaw);
   bool isInverted(double & mountingYaw);
 
   rclcpp::Node::SharedPtr node_;
@@ -90,16 +96,16 @@ private:
 class ScanHolder
 {
 public:
-  ScanHolder(std::map<std::string, laser_utils::LaserMetadata> & lasers);
+  explicit ScanHolder(std::map<std::string, laser_utils::LaserMetadata> & lasers);
   ~ScanHolder();
   sensor_msgs::msg::LaserScan getCorrectedScan(const int & id);
   void addScan(const sensor_msgs::msg::LaserScan scan);
 
 private:
-  std::unique_ptr<std::vector<sensor_msgs::msg::LaserScan> > current_scans_;
-  std::map<std::string, laser_utils::LaserMetadata>& lasers_;
+  std::unique_ptr<std::vector<sensor_msgs::msg::LaserScan>> current_scans_;
+  std::map<std::string, laser_utils::LaserMetadata> & lasers_;
 };
 
-} // end namespace
+}  // namespace laser_utils
 
-#endif //SLAM_TOOLBOX_LASER_UTILS_H_
+#endif  // SLAM_TOOLBOX__LASER_UTILS_HPP_

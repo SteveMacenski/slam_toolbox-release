@@ -16,14 +16,9 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_PANEL_H
-#define SLAM_TOOLBOX_PANEL_H
+#ifndef RVIZ_PLUGIN__SLAM_TOOLBOX_RVIZ_PLUGIN_H_
+#define RVIZ_PLUGIN__SLAM_TOOLBOX_RVIZ_PLUGIN_H_
 
-// ROS
-#include "rclcpp/rclcpp.hpp"
-#include "rviz_common/panel.hpp"
-#include "slam_toolbox/toolbox_msgs.hpp"
-// STL
 #include <stdlib.h>
 #include <stdio.h>
 // QT
@@ -37,10 +32,16 @@
 #include <QLabel>
 #include <QFrame>
 #include <QRadioButton>
-
+// STL
 #include <thread>
 #include <chrono>
 #include <memory>
+// ROS
+#include "rclcpp/rclcpp.hpp"
+#include "rviz_common/panel.hpp"
+#include "slam_toolbox/toolbox_msgs.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+
 
 class QLineEdit;
 class QSpinBox;
@@ -48,8 +49,8 @@ class QComboBox;
 
 namespace rviz_common
 {
-  class VisualizationManager;
-};
+class VisualizationManager;
+}  // namespace rviz_common
 
 namespace slam_toolbox
 {
@@ -67,12 +68,11 @@ class SlamToolboxPlugin : public rviz_common::Panel
   Q_OBJECT
 
 public:
-  SlamToolboxPlugin(QWidget * parent);
-  SlamToolboxPlugin() {SlamToolboxPlugin(nullptr);};
+  explicit SlamToolboxPlugin(QWidget * parent = 0);
 
-  ~SlamToolboxPlugin();
+  virtual ~SlamToolboxPlugin();
 
-public Q_SLOTS:
+private Q_SLOTS:
   void ClearChanges();
   void SaveChanges();
   void SaveMap();
@@ -91,52 +91,52 @@ public Q_SLOTS:
   void updateCheckStateIfExternalChange();
 
 protected:
-  QVBoxLayout* _vbox;
-  QHBoxLayout* _hbox1;
-  QHBoxLayout* _hbox2;
-  QHBoxLayout* _hbox3;
-  QHBoxLayout* _hbox4;
-  QHBoxLayout* _hbox5;
-  QHBoxLayout* _hbox6;
-  QHBoxLayout* _hbox7;
-  QHBoxLayout* _hbox8;
-  QHBoxLayout* _hbox9;
-  QHBoxLayout* _hbox10;
+  QVBoxLayout * _vbox;
+  QHBoxLayout * _hbox1;
+  QHBoxLayout * _hbox2;
+  QHBoxLayout * _hbox3;
+  QHBoxLayout * _hbox4;
+  QHBoxLayout * _hbox5;
+  QHBoxLayout * _hbox6;
+  QHBoxLayout * _hbox7;
+  QHBoxLayout * _hbox8;
+  QHBoxLayout * _hbox9;
+  QHBoxLayout * _hbox10;
 
-  QPushButton* _button1;
-  QPushButton* _button2;
-  QPushButton* _button3;
-  QPushButton* _button4;
-  QPushButton* _button5;
-  QPushButton* _button6;
-  QPushButton* _button7;
-  QPushButton* _button8;
+  QPushButton * _button1;
+  QPushButton * _button2;
+  QPushButton * _button3;
+  QPushButton * _button4;
+  QPushButton * _button5;
+  QPushButton * _button6;
+  QPushButton * _button7;
+  QPushButton * _button8;
 
-  QLineEdit* _line1;
-  QLineEdit* _line2;
-  QLineEdit* _line3;
-  QLineEdit* _line4;
-  QLineEdit* _line5;
-  QLineEdit* _line6;
-  QLineEdit* _line7;
+  QLineEdit * _line1;
+  QLineEdit * _line2;
+  QLineEdit * _line3;
+  QLineEdit * _line4;
+  QLineEdit * _line5;
+  QLineEdit * _line6;
+  QLineEdit * _line7;
 
-  QCheckBox* _check1;
-  QCheckBox* _check2;
+  QCheckBox * _check1;
+  QCheckBox * _check2;
 
-  QRadioButton* _radio1;
-  QRadioButton* _radio2;
-  QRadioButton* _radio3;
-  QRadioButton* _radio4;
+  QRadioButton * _radio1;
+  QRadioButton * _radio2;
+  QRadioButton * _radio3;
+  QRadioButton * _radio4;
 
-  QLabel* _label1;
-  QLabel* _label2;
-  QLabel* _label4;
-  QLabel* _label5;
-  QLabel* _label6;
-  QLabel* _label7;
-  QLabel* _label8;
+  QLabel * _label1;
+  QLabel * _label2;
+  QLabel * _label4;
+  QLabel * _label5;
+  QLabel * _label6;
+  QLabel * _label7;
+  QLabel * _label8;
 
-  QFrame* _line;
+  QFrame * _line;
 
   rclcpp::Node::SharedPtr ros_node_;
   rclcpp::Client<slam_toolbox::srv::Clear>::SharedPtr _clearChanges;
@@ -153,8 +153,12 @@ protected:
   std::unique_ptr<std::thread> _thread;
 
   ContinueMappingType _match_type;
+  
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr _initialposeSub;
+  
+  void InitialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose);
 };
 
-} // end namespace
+}  // namespace slam_toolbox
 
-#endif
+#endif  // RVIZ_PLUGIN__SLAM_TOOLBOX_RVIZ_PLUGIN_H_

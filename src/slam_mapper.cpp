@@ -18,6 +18,7 @@
 
 /* Author: Steven Macenski */
 
+#include <memory>
 #include "slam_toolbox/slam_mapper.hpp"
 
 namespace mapper_utils
@@ -38,14 +39,14 @@ SMapper::~SMapper()
 }
 
 /*****************************************************************************/
-karto::Mapper* SMapper::getMapper()
+karto::Mapper * SMapper::getMapper()
 /*****************************************************************************/
 {
   return mapper_.get();
 }
 
 /*****************************************************************************/
-void SMapper::setMapper(karto::Mapper* mapper)
+void SMapper::setMapper(karto::Mapper * mapper)
 /*****************************************************************************/
 {
   mapper_.reset(mapper);
@@ -59,12 +60,12 @@ void SMapper::clearLocalizationBuffer()
 }
 
 /*****************************************************************************/
-karto::OccupancyGrid* SMapper::getOccupancyGrid(const double & resolution)
+karto::OccupancyGrid * SMapper::getOccupancyGrid(const double & resolution)
 /*****************************************************************************/
 {
   karto::OccupancyGrid * occ_grid = nullptr;
   return karto::OccupancyGrid::CreateFromScans(mapper_->GetAllProcessedScans(),
-    resolution);
+           resolution);
 }
 
 /*****************************************************************************/
@@ -77,7 +78,7 @@ tf2::Transform SMapper::toTfPose(const karto::Pose2 & pose) const
   q.setRPY(0., 0., pose.GetHeading());
   new_pose.setRotation(q);
   return new_pose;
-};
+}
 
 /*****************************************************************************/
 karto::Pose2 SMapper::toKartoPose(const tf2::Transform & pose) const
@@ -88,7 +89,7 @@ karto::Pose2 SMapper::toKartoPose(const tf2::Transform & pose) const
   transformed_pose.SetY(pose.getOrigin().y());
   transformed_pose.SetHeading(tf2::getYaw(pose.getRotation()));
   return transformed_pose;
-};
+}
 
 /*****************************************************************************/
 void SMapper::configure(const rclcpp::Node::SharedPtr & node)
@@ -301,7 +302,6 @@ void SMapper::Reset()
 /*****************************************************************************/
 {
   mapper_->Reset();
-  return;
 }
 
-} // end namespace
+}  // namespace mapper_utils

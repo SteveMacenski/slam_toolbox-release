@@ -16,21 +16,21 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
-#define SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
+#ifndef SLAM_TOOLBOX__MERGE_MAPS_KINEMATIC_HPP_
+#define SLAM_TOOLBOX__MERGE_MAPS_KINEMATIC_HPP_
 
+#include <thread>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <string>
 #include <map>
 #include <memory>
 #include <vector>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <fstream>
-#include <boost/thread.hpp>
 
 #include "rclcpp/rclcpp.hpp"
-//#include "interactive_markers/interactive_marker_server.h"
-//#include "interactive_markers/menu_handler.h"
+#include "interactive_markers/interactive_marker_server.hpp"
+#include "interactive_markers/menu_handler.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/message_filter.h"
@@ -44,13 +44,13 @@
 #include "slam_toolbox/laser_utils.hpp"
 #include "slam_toolbox/visualization_utils.hpp"
 
-using namespace toolbox_types;
-using namespace karto;
+using namespace toolbox_types;  // NOLINT
+using namespace karto;  // NOLINT
 
 class MergeMapsKinematic : public rclcpp::Node
 {
-typedef std::vector<karto::LocalizedRangeScanVector>::iterator LocalizedRangeScansVecIt;
-typedef karto::LocalizedRangeScanVector::iterator LocalizedRangeScansIt;
+  typedef std::vector<karto::LocalizedRangeScanVector>::iterator LocalizedRangeScansVecIt;
+  typedef karto::LocalizedRangeScanVector::iterator LocalizedRangeScansIt;
 
 public:
   MergeMapsKinematic();
@@ -59,33 +59,43 @@ public:
   void configure();
 
 private:
-
   // callback
-  bool mergeMapCallback(const std::shared_ptr<rmw_request_id_t> request_header, const std::shared_ptr<slam_toolbox::srv::MergeMaps::Request> req, std::shared_ptr<slam_toolbox::srv::MergeMaps::Response> resp);
-  bool addSubmapCallback(const std::shared_ptr<rmw_request_id_t> request_header, const std::shared_ptr<slam_toolbox::srv::AddSubmap::Request> req, std::shared_ptr<slam_toolbox::srv::AddSubmap::Response> resp);
-  void processInteractiveFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::SharedPtr feedback);
-  void kartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::srv::GetMap::Response& map);
-  void transformScan(LocalizedRangeScansIt iter, tf2::Transform& submap_correction);
+  bool mergeMapCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<slam_toolbox::srv::MergeMaps::Request> req,
+    std::shared_ptr<slam_toolbox::srv::MergeMaps::Response> resp);
+  bool addSubmapCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<slam_toolbox::srv::AddSubmap::Request> req,
+    std::shared_ptr<slam_toolbox::srv::AddSubmap::Response> resp);
+  void processInteractiveFeedback(
+    visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback);
+  void kartoToROSOccupancyGrid(
+    const karto::LocalizedRangeScanVector & scans,
+    nav_msgs::srv::GetMap::Response & map);
+  void transformScan(LocalizedRangeScansIt iter, tf2::Transform & submap_correction);
 
-  //apply transformation to correct pose
-  karto::Pose2 applyCorrection(const karto::Pose2& pose, const tf2::Transform& submap_correction);
-  karto::Vector2<kt_double> applyCorrection(const karto::Vector2<kt_double>&  pose, const tf2::Transform& submap_correction);
+  // apply transformation to correct pose
+  karto::Pose2 applyCorrection(const karto::Pose2 & pose, const tf2::Transform & submap_correction);
+  karto::Vector2<kt_double> applyCorrection(
+    const karto::Vector2<kt_double> & pose,
+    const tf2::Transform & submap_correction);
 
   // ROS-y-ness
-  std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData> > > sstmS_;
-  std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid> > > sstS_;
-  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::MergeMaps> > ssMap_;
-  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::AddSubmap> > ssSubmap_;
+  std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>>> sstmS_;
+  std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>>> sstS_;
+  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::MergeMaps>> ssMap_;
+  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::AddSubmap>> ssSubmap_;
 
-  //karto bookkeeping
+  // karto bookkeeping
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
-  std::vector<std::unique_ptr<karto::Dataset> > dataset_vec_;
+  std::vector<std::unique_ptr<karto::Dataset>> dataset_vec_;
 
   // TF
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
 
   // visualization
-  // std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
+  std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
 
   // state
   std::map<int, Eigen::Vector3d> submap_locations_;
@@ -95,4 +105,4 @@ private:
   int num_submaps_;
 };
 
-#endif //SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
+#endif  // SLAM_TOOLBOX__MERGE_MAPS_KINEMATIC_HPP_
