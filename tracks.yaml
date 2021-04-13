@@ -20,11 +20,11 @@ tracks:
     patches: null
     release_inc: '2'
     release_repo_url: null
-    release_tag: 2.0.3
+    release_tag: 2.0.4
     ros_distro: dashing
     vcs_type: git
     vcs_uri: https://github.com/SteveMacenski/slam_toolbox.git
-    version: 2.0.3
+    version: 2.0.4
   eloquent:
     actions:
     - bloom-export-upstream :{vcs_local_uri} :{vcs_type} --tag :{release_tag} --display-uri
