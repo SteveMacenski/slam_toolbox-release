@@ -609,7 +609,7 @@ namespace karto
       }
       else
       {
-        std::cout << "RemoveVertex: Failed to remove vertex " << idx 
+        std::cout << "RemoveVertex: Failed to remove vertex " << idx
           << " because it doesnt exist in m_Vertices." << std::endl;
       }
     }
@@ -646,13 +646,15 @@ namespace karto
         for (iter = indexIter->second.begin(); iter != indexIter->second.end(); ++iter)
         {
           delete iter->second;
+          iter->second = nullptr;
         }
       }
       m_Vertices.clear();
 
-      const_forEach(typename std::vector<Edge<T>*>, &m_Edges)
+      forEach(typename std::vector<Edge<T>*>, &m_Edges)
       {
         delete *iter;
+        *iter = nullptr;
       }
       m_Edges.clear();
     }
@@ -807,6 +809,12 @@ namespace karto
       return m_pLoopScanMatcher;
     }
 
+    /**
+     * Create new scan matcher for graph
+     * @param rangeThreshold
+     */
+    void UpdateLoopScanMatcher(kt_double rangeThreshold);
+
   private:
     /**
      * Gets the vertex associated with the given scan
@@ -823,7 +831,7 @@ namespace karto
       }
       else
       {
-        std::cout << "GetVertex: Failed to get vertex, idx " << pScan->GetStateId() << 
+        std::cout << "GetVertex: Failed to get vertex, idx " << pScan->GetStateId() <<
           " is not in m_Vertices." << std::endl;
         return nullptr;
       }
@@ -1586,6 +1594,18 @@ namespace karto
     void SetLastScan(LocalizedRangeScan* pScan);
 
     /**
+     * Clears the laser scan of device
+     * @param pScan
+     */
+    void ClearLastScan(LocalizedRangeScan* pScan);
+
+    /**
+     * Clears the laser scan of device name
+     * @param pScan
+     */
+    void ClearLastScan(const Name& name);
+
+    /**
      * Gets the scan with the given unique id
      * @param id
      * @return scan
@@ -1599,7 +1619,7 @@ namespace karto
       }
       else
       {
-        std::cout << "GetScan: id " << id << 
+        std::cout << "GetScan: id " << id <<
           " does not exist in m_scans, cannot retrieve it." << std::endl;
         return nullptr;
       }
@@ -1646,6 +1666,18 @@ namespace karto
      * Gets the running scan buffer of device
      */
     kt_int32u GetRunningScanBufferSize(const Name& rSensorName);
+
+    /**
+     * Sets the running scan buffer size for all devices
+     * @param rScanBufferSize
+     */
+    void SetRunningScanBufferSize(kt_int32u rScanBufferSize);
+
+    /**
+     * Sets the running scan buffer maximum distance for all devices
+     * @param rScanBufferMaxDistance
+     */
+    void SetRunningScanBufferMaximumDistance(kt_double rScanBufferMaxDistance);
 
     /**
      * Gets all scans of all devices
@@ -1948,10 +1980,11 @@ namespace karto
     // processors
     kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
     kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
-    kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
+    kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan, kt_bool addScanToLocalizationBuffer = false);
     kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
     kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan>*);
-
+    void AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex<LocalizedRangeScan> * scan_vertex);
+    void ClearLocalizationBuffer();
     /**
      * Returns all processed scans added to the mapper.
      * NOTE: The returned scans have their corrected pose updated.
@@ -2094,6 +2127,7 @@ namespace karto
 
   protected:
     kt_bool m_Initialized;
+    kt_bool m_Deserialized;
 
     ScanMatcher* m_pSequentialScanMatcher;
 
