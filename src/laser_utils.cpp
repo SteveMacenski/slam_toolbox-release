@@ -106,16 +106,25 @@ karto::LaserRangeFinder * LaserAssistant::makeLaser(const double & mountingYaw)
   laser->SetAngularResolution(scan_.angle_increment);
 
   bool is_360_lidar = false;
-  if ((std::fabs(scan_.angle_min + M_PI) < 1e-3) &&
-    (std::fabs(scan_.angle_max - M_PI) < 1e-3))
-  {
+  const float angular_range = std::fabs(scan_.angle_max - scan_.angle_min);
+  if (std::fabs(angular_range - 2.0 * M_PI) < (scan_.angle_increment - (std::numeric_limits<float>::epsilon() * 2.0f*M_PI))) {
     is_360_lidar = true;
+  }
+
+  // Check if we have a 360 laser, but incorrectly setup as to produce
+  // measurements in range [0, 360] rather than appropriately as [0, 360)
+  if (angular_range > 6.10865 /*350 deg*/ && std::round(angular_range / scan_.angle_increment) + 1 == scan_.ranges.size()) {
+    is_360_lidar = false;
   }
 
   laser->SetIs360Laser(is_360_lidar);
 
   double max_laser_range = 25;
-  max_laser_range = node_->declare_parameter("max_laser_range", max_laser_range);
+  if (!node_->has_parameter("max_laser_range")) {
+    node_->declare_parameter("max_laser_range", max_laser_range);
+  }
+  node_->get_parameter("max_laser_range", max_laser_range);
+
   if (max_laser_range > scan_.range_max) {
     RCLCPP_WARN(node_->get_logger(),
       "maximum laser range setting (%.1f m) exceeds the capabilities "
