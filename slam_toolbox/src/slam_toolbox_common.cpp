@@ -356,7 +356,7 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
   catch(tf2::TransformException& e)
   {
     ROS_ERROR("Transform from base_link to odom failed: %s", e.what());
-    odom_to_map.setIdentity();
+    return odom_to_map;
   }
 
   // if we're continuing a previous session, we need to
@@ -446,9 +446,7 @@ bool SlamToolbox::shouldProcessScan(
   }
 
   // check moved enough, within 10% for correction error
-  const double dist2 = fabs((last_pose.GetX() - pose.GetX())*(last_pose.GetX() - 
-    pose.GetX()) + (last_pose.GetY() - pose.GetY())*
-    (last_pose.GetX() - pose.GetY()));
+  const double dist2 = last_pose.SquaredDistance(pose);
   if(dist2 < 0.8 * min_dist2 || scan->header.seq < 5)
   {
     return false;
