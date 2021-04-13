@@ -1,3 +1,26 @@
+## slam_toolbox (foxy) - 2.4.0-1
+
+The packages in the `slam_toolbox` repository were released into the `foxy` distro by running `/usr/bin/bloom-release slam_toolbox --track foxy --rosdistro foxy --edit` on `Tue, 13 Apr 2021 18:10:23 -0000`
+
+The `slam_toolbox` package was released.
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: https://github.com/SteveMacenski/slam_toolbox-release.git
+- rosdistro version: `2.3.0-1`
+- old version: `2.3.0-1`
+- new version: `2.4.0-1`
+
+Versions of tools used:
+
+- bloom version: `0.10.6`
+- catkin_pkg version: `0.4.23`
+- rosdep version: `0.20.0`
+- rosdistro version: `0.8.3`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (dashing) - 2.0.4-1
 
 The packages in the `slam_toolbox` repository were released into the `dashing` distro by running `/usr/bin/bloom-release slam_toolbox --track dashing --rosdistro dashing --edit` on `Tue, 13 Apr 2021 18:01:20 -0000`
