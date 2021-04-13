@@ -40,6 +40,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rviz_common/panel.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 
 class QLineEdit;
@@ -67,18 +68,16 @@ class SlamToolboxPlugin : public rviz_common::Panel
   Q_OBJECT
 
 public:
-  explicit SlamToolboxPlugin(QWidget * parent);
-  SlamToolboxPlugin() {SlamToolboxPlugin(nullptr);}
+  explicit SlamToolboxPlugin(QWidget * parent = 0);
 
-  ~SlamToolboxPlugin();
+  virtual ~SlamToolboxPlugin();
 
-public Q_SLOTS:
+private Q_SLOTS:
   void ClearChanges();
   void SaveChanges();
   void SaveMap();
   void ClearQueue();
   void InteractiveCb(int state);
-  void PauseProcessingCb(int state);
   void PauseMeasurementsCb(int state);
   void FirstNodeMatchCb();
   void PoseEstMatchCb();
@@ -154,6 +153,10 @@ protected:
   std::unique_ptr<std::thread> _thread;
 
   ContinueMappingType _match_type;
+  
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr _initialposeSub;
+  
+  void InitialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr pose);
 };
 
 }  // namespace slam_toolbox

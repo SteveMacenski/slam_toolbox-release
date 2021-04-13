@@ -4,17 +4,13 @@
 |-----|----|----|
 | **Build Farm** | [![Build Status](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/) | N/A |
 
-NOTE: ROS2 Port of Slam Toolbox is incomplete. Known on-going work:
-- Interactive markers need to be ported to ROS2 and integrated
-- Panel plugins need to be ported to ROS2 to test and ship the rviz plugin
-
 We've received feedback from users and have robots operating in the following environments with SLAM Toolbox:
 - Retail
 - Warehouses
 - Libraries
 - Research
 
-It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS2 Navigation here](https://ros-planning.github.io/navigation2/tutorials/docs/navigation2_with_slam.html).
+It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS2 Navigation here](https://navigation.ros.org/tutorials/docs/navigation2_with_slam.html).
 
 [![IMAGE ALT TEXT](https://user-images.githubusercontent.com/14944147/74176653-f69beb80-4bec-11ea-906a-a233541a6064.png)](https://vimeo.com/378682207)
 
@@ -43,6 +39,28 @@ The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/
 
 ![map_image](/images/circuit_launch.gif?raw=true "Map Image")
 
+An example simulated tutorial can be found at [navigation.ros.org](https://navigation.ros.org/tutorials/docs/navigation2_with_slam.html). A more basic tutorial can be found [here](http://wiki.ros.org/Robots/ARI/Tutorials/Navigation/Mapping).
+
+# Support and Contribution
+
+If you have any questions on use or configuration, please post your questions on [ROS Answers](answers.ros.org) and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
+
+If you're interested in contributing to this project in a substantial way, please file a public GitHub issue on your new feature / patch. If for some reason the development of this feature is sensitive, please email the maintainers at their email addresses listed in the `package.xml` file. 
+
+For all contributions, please properly fill in the GitHub issue and PR templates with all necessary context. All PRs must be passing CI and maintaining ABI compatibility within released ROS distributions. A maintainer will follow up shortly thereafter. 
+
+# 03/23/2021 Note On Serialized Files
+
+As of 03/23/2021, the contents of the serialized files has changed. For all new users after this date, this regard this section it does not impact you.
+
+If you have previously existing serialized files (e.g. not `pgm` maps, but `.posegraph` serialized slam sessions), after this date, you may need to take some action to maintain current features. Unfortunately, an ABI breaking change was required to be made in order to fix a very large bug affecting any 360 or non-axially-mounted LIDAR system.
+
+[This Discourse post](https://discourse.ros.org/t/request-for-input-potential-existing-slam-toolbox-serialized-file-invalidation/19520) highlights the issues. The frame storing the scan data for the optimizer was incorrect leading to explosions or flipping of maps for 360 and non-axially-aligned robots when using conservative loss functions. This change permanently fixes this issue, however it changes the frame of reference that this data is stored and serialized in. If your system as a non-360 lidar and it is mounted with its frame aligned with the robot base frame, you're unlikely to notice a problem and can disregard this statement. For all others noticing issues, you have the following options:
+- Use the `<distro>-devel-unfixed` branch rather than `<distro>-devel`, which contains the unfixed version of this distribution's release which will be maintained in parallel to the main branches to have an option to continue with your working solution
+- Convert your serialized files into the new reference frame with an offline utility
+- Take the raw data and rerun the SLAM sessions to get a new serialized file with the right content
+
+More of the conversation can be seen on tickets #198 and #281. I apologize for the inconvenience, however this solves a very large bug that was impacting a large number of users. I've worked hard to make sure there's a viable path forward for everyone.
 
 # LifeLong Mapping
 
@@ -82,7 +100,7 @@ To enable, set `mode: localization` in the configuration file to allow for the C
 
 To minimize the amount of changes required for moving to this mode over AMCL, we also expose a subscriber to the `/initialpose` topic used by AMCL to relocalize to a position, which also hooks up to the `2D Pose Estimation` tool in RVIZ. This way you can enter localization mode with our approach but continue to use the same API as you expect from AMCL for ease of integration.
 
-In summary, this approach I dub `elastic pose-graph localization` is where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using the scan matcher, but not update the underlaying map long-term should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The lifelong mapping/continuous slam mode above will do better if you'd like to modify the underlying graph while moving.
+In summary, this approach I dub `elastic pose-graph localization` is where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using the scan matcher, but not update the underlaying map long-term should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The lifelong mapping/continuous slam mode above will do better if you'd like to modify the underlying graph while moving. This method of localization might not be suitable for all applications, it does require quite a bit of tuning for your particular robot and needs high quality odometry. If in doubt, you're always welcome to use other 2D map localizers in the ecosystem like AMCL. For most beginners or users looking for a good out of the box experience, I'd recommend AMCL. 
 
 ## Tools 
 
@@ -103,14 +121,6 @@ This uses RVIZ and the plugin to load any number of posegraphs that will show up
 It's more of a demonstration of other things you can do once you have the raw data to work with, but I don't suspect many people will get much use out of it unless you're used to stitching maps by hand.
 
 More information in the RVIZ Plugin section below.
-
-#### Pose Graph Merging
-
-This is under development.
-
-This is to solve the problem of merging many maps together with an initial guess of location in an elastic sense. This is something you just can't get if you don't have the full pose-graph and raw data to work with -- which we have from our continuous mapping work.
-
-Hint: This is also really good for multi-robot map updating as well :)  
 
 ### RVIZ Plugin
 
