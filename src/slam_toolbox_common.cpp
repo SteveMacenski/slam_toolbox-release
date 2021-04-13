@@ -186,20 +186,20 @@ void SlamToolbox::setROSInterfaces()
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
     map_name_ + "_metadata",
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-  ssMap_ = this->create_service<nav_msgs::srv::GetMap>("dynamic_map",
+  ssMap_ = this->create_service<nav_msgs::srv::GetMap>("/slam_toolbox/dynamic_map",
       std::bind(&SlamToolbox::mapCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
   ssPauseMeasurements_ = this->create_service<slam_toolbox::srv::Pause>(
-    "pause_new_measurements",
+    "/slam_toolbox/pause_new_measurements",
     std::bind(&SlamToolbox::pauseNewMeasurementsCallback,
     this, std::placeholders::_1,
     std::placeholders::_2, std::placeholders::_3));
   ssSerialize_ = this->create_service<slam_toolbox::srv::SerializePoseGraph>(
-    "serialize_map",
+    "/slam_toolbox/serialize_map",
     std::bind(&SlamToolbox::serializePoseGraphCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   ssDesserialize_ = this->create_service<slam_toolbox::srv::DeserializePoseGraph>(
-    "deserialize_map",
+    "slam_toolbox/deserialize_map",
     std::bind(&SlamToolbox::deserializePoseGraphCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
@@ -300,12 +300,13 @@ bool SlamToolbox::shouldStartWithPoseGraph(
 {
   // if given a map to load at run time, do it.
   this->declare_parameter("map_file_name", std::string(""));
-  this->declare_parameter("map_start_pose", std::vector<double>());
-  this->declare_parameter("map_start_at_dock", false);
+  auto map_start_pose = this->declare_parameter("map_start_pose");
+  auto map_start_at_dock = this->declare_parameter("map_start_at_dock");
   filename = this->get_parameter("map_file_name").as_string();
   if (!filename.empty()) {
     std::vector<double> read_pose;
-    if (this->get_parameter("map_start_pose", read_pose)) {
+    if (map_start_pose.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET) {
+      read_pose = map_start_pose.get<std::vector<double>>();
       start_at_dock = false;
       if (read_pose.size() != 3) {
         RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Incorrect "
@@ -319,8 +320,12 @@ bool SlamToolbox::shouldStartWithPoseGraph(
         pose.y = read_pose[1];
         pose.theta = read_pose[2];
       }
+    } else if (map_start_at_dock.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET) {
+      start_at_dock = map_start_at_dock.get<bool>();
     } else {
-      start_at_dock = this->get_parameter("map_start_at_dock").as_bool();
+      RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Map starting "
+          "pose not specified. Set either map_start_pose or map_start_at_dock.");
+      return false;
     }
 
     return true;
@@ -367,8 +372,10 @@ bool SlamToolbox::updateMap()
 
   // publish map as current
   map_.map.header.stamp = this->now();
-  sst_->publish(map_.map);
-  sstm_->publish(map_.map.info);
+  sst_->publish(
+    std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
+  sstm_->publish(
+    std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
 
   delete occ_grid;
   occ_grid = nullptr;
@@ -408,7 +415,7 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(get_logger(), "Transform from base_link to odom failed: %s",
       e.what());
-    odom_to_map.setIdentity();
+    return odom_to_map;
   }
 
   // if we're continuing a previous session, we need to
@@ -454,6 +461,7 @@ LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
     laser->GetName(), readings);
   range_scan->SetOdometricPose(transformed_pose);
   range_scan->SetCorrectedPose(transformed_pose);
+  range_scan->SetTime(rclcpp::Time(scan->header.stamp).nanoseconds()/1.e9);
   return range_scan;
 }
 
@@ -495,9 +503,7 @@ bool SlamToolbox::shouldProcessScan(
   }
 
   // check moved enough, within 10% for correction error
-  const double dist2 = fabs((last_pose.GetX() - pose.GetX()) * (last_pose.GetX() -
-      pose.GetX()) + (last_pose.GetY() - pose.GetY()) *
-      (last_pose.GetX() - pose.GetY()));
+  const double dist2 = last_pose.SquaredDistance(pose);
   if (dist2 < 0.8 * min_dist2 || scan_ctr < 5) {
     return false;
   }
@@ -693,6 +699,7 @@ void SlamToolbox::loadSerializedPoseGraph(
   Sensor * pSensor = dynamic_cast<Sensor *>(laser);
   if (pSensor) {
     SensorManager::GetInstance()->RegisterSensor(pSensor);
+    lasers_.clear();
   } else {
     RCLCPP_ERROR(get_logger(), "Invalid sensor pointer in dataset."
       " Unable to register sensor.");
