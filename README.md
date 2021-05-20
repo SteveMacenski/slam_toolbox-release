@@ -12,6 +12,14 @@ We've received feedback from users and have robots operating in the following en
 
 It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS2 Navigation here](https://navigation.ros.org/tutorials/docs/navigation2_with_slam.html).
 
+### Cite This Work
+
+You can find this work [here](https://joss.theoj.org/papers/10.21105/joss.02783) and clicking on the image below.
+
+> Macenski, S., Jambrecic I., "SLAM Toolbox: SLAM for the dynamic world", Journal of Open Source Software, 6(61), 2783, 2021. 
+
+> Macenski, S., "On Use of SLAM Toolbox, A fresh(er) look at mapping and localization for the dynamic world", ROSCon 2019.
+
 [![IMAGE ALT TEXT](https://user-images.githubusercontent.com/14944147/74176653-f69beb80-4bec-11ea-906a-a233541a6064.png)](https://vimeo.com/378682207)
 
 # Introduction
@@ -38,8 +46,6 @@ This package has been benchmarked mapping building at 5x+ realtime up to about 3
 The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/) in Oakland, California. Thanks to [Silicon Valley Robotics](https://svrobo.org/) & Circuit Launch for being a testbed for some of this work. This data is currently available upon request, but its going to be included in a larger open-source dataset down the line. 
 
 ![map_image](/images/circuit_launch.gif?raw=true "Map Image")
-
-An example simulated tutorial can be found at [navigation.ros.org](https://navigation.ros.org/tutorials/docs/navigation2_with_slam.html). A more basic tutorial can be found [here](http://wiki.ros.org/Robots/ARI/Tutorials/Navigation/Mapping).
 
 # Support and Contribution
 
