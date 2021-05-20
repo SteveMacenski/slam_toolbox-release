@@ -1,3 +1,26 @@
+## slam_toolbox (galactic) - 2.5.0-1
+
+The packages in the `slam_toolbox` repository were released into the `galactic` distro by running `/usr/bin/bloom-release slam_toolbox --track galactic --rosdistro galactic --new-track` on `Thu, 20 May 2021 17:48:34 -0000`
+
+The `slam_toolbox` package was released.
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `2.5.0-1`
+
+Versions of tools used:
+
+- bloom version: `0.10.7`
+- catkin_pkg version: `0.4.23`
+- rosdep version: `0.20.1`
+- rosdistro version: `0.8.3`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (foxy) - 2.4.0-1
 
 The packages in the `slam_toolbox` repository were released into the `foxy` distro by running `/usr/bin/bloom-release slam_toolbox --track foxy --rosdistro foxy --edit` on `Tue, 13 Apr 2021 18:10:23 -0000`
