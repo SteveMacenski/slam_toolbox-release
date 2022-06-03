@@ -1,3 +1,26 @@
+## slam_toolbox (humble) - 2.6.0-1
+
+The packages in the `slam_toolbox` repository were released into the `humble` distro by running `/usr/bin/bloom-release slam_toolbox --rosdistro humble --track humble` on `Fri, 03 Jun 2022 21:55:15 -0000`
+
+The `slam_toolbox` package was released.
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `2.6.0-1`
+
+Versions of tools used:
+
+- bloom version: `0.11.1`
+- catkin_pkg version: `0.5.2`
+- rosdep version: `0.21.0`
+- rosdistro version: `0.8.3`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (noetic) - 1.5.6-1
 
 The packages in the `slam_toolbox` repository were released into the `noetic` distro by running `/usr/bin/bloom-release slam_toolbox --rosdistro noetic --track noetic --edit` on `Tue, 14 Sep 2021 22:37:23 -0000`
