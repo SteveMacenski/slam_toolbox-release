@@ -208,6 +208,7 @@ void SlamToolbox::publishVisualizations()
     updateMap();
     if(!isPaused(VISUALIZING_GRAPH))
     {
+      boost::mutex::scoped_lock lock(smapper_mutex_);
       closure_assistant_->publishGraph();
     }
     r.sleep();
@@ -638,6 +639,8 @@ void SlamToolbox::loadSerializedPoseGraph(
   smapper_->setMapper(mapper.release());
   smapper_->configure(nh_);
   dataset_.reset(dataset.release());
+
+  closure_assistant_->setMapper(smapper_->getMapper());
 
   if (!smapper_->getMapper())
   {
