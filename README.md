@@ -2,15 +2,13 @@
 
 | DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) | [![Build Status](https://img.shields.io/docker/pulls/stevemacenski/slam-toolbox.svg?maxAge=2592000)](https://hub.docker.com/r/stevemacenski/slam-toolbox) |
 |-----|----|----|
-| **Build Farm** | [![Build Status](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/) | N/A |
+| **Build Farm** | [![Build Status](http://build.ros.org/buildStatus/icon?job=Mdev__slam_toolbox__ubuntu_bionic_amd64)](http://build.ros.org/view/Kbin_uX64/job/Mdev__slam_toolbox__ubuntu_bionic_amd64/) | N/A |
 
 We've received feedback from users and have robots operating in the following environments with SLAM Toolbox:
 - Retail
 - Warehouses
 - Libraries
 - Research
-
-It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS2 Navigation here](https://navigation.ros.org/tutorials/docs/navigation2_with_slam.html).
 
 ### Cite This Work
 
@@ -24,7 +22,8 @@ You can find this work [here](https://joss.theoj.org/papers/10.21105/joss.02783)
 
 # Introduction
 
-Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/), maintained whil at Samsung Research, and largely in his free time. 
+
+Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/) and in his free time. 
 
 This project contains the ability to do most everything any other available SLAM library, both free and paid, and more. This includes:
 - Ordinary point-and-shoot 2D SLAM mobile robotics folks expect (start, map, save pgm file) with some nice built in utilities like saving maps
@@ -39,21 +38,20 @@ This project contains the ability to do most everything any other available SLAM
 - Map serialization and lossless data storage
 - ... more but those are the highlights 
 
-For running on live production robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
+For running on live production robots, I recommend using the snap or from the build farm: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
 
 This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 200,000 sq.ft. building in synchronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
-The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/) in Oakland, California. Thanks to [Silicon Valley Robotics](https://svrobo.org/) & Circuit Launch for being a testbed for some of this work.
+The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/) in Oakland, California. Thanks to [Silicon Valley Robotics](https://svrobo.org/) & Circuit Launch for being a testbed for some of this work. This data is currently available upon request, but its going to be included in a larger open-source dataset down the line. 
 
 ![map_image](/images/circuit_launch.gif?raw=true "Map Image")
 
-# Support and Contribution
-
-If you have any questions on use or configuration, please post your questions on [ROS Answers](answers.ros.org) and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
-
-If you're interested in contributing to this project in a substantial way, please file a public GitHub issue on your new feature / patch. If for some reason the development of this feature is sensitive, please email the maintainers at their email addresses listed in the `package.xml` file. 
-
-For all contributions, please properly fill in the GitHub issue and PR templates with all necessary context. All PRs must be passing CI and maintaining ABI compatibility within released ROS distributions. A maintainer will follow up shortly thereafter. 
+An overview of how the map was generated is presented below:
+![slam_toolbox_sync_diagram](/images/slam_toolbox_sync.png)
+1. ROS Node: SLAM toolbox is run in synchronous mode, which generates a ROS node. This node subscribes to laser scan and odometry topics, and publishes map to odom transform and a map.
+2. Get odometry and LIDAR data: A callback for the laser topic will generate a pose (using odometry) and a laser scan tied at that node. These PosedScan objects form a queue, which are processed by the algorithm.
+3. Process Data: The queue of PosedScan objects are used to construct a pose graph; odometry is refined using laser scan matching. This pose graph is used to compute robot pose, and find loop closures. If a loop closure is found, the pose graph is optimized, and pose estimates are updated. Pose estimates are used to compute and publish a map to odom transform for the robot.
+4. Mapping: Laser scans associated with each pose in the pose graph are used to construct and publish a map.
 
 # 03/23/2021 Note On Serialized Files
 
@@ -106,7 +104,7 @@ To enable, set `mode: localization` in the configuration file to allow for the C
 
 To minimize the amount of changes required for moving to this mode over AMCL, we also expose a subscriber to the `/initialpose` topic used by AMCL to relocalize to a position, which also hooks up to the `2D Pose Estimation` tool in RVIZ. This way you can enter localization mode with our approach but continue to use the same API as you expect from AMCL for ease of integration.
 
-In summary, this approach I dub `elastic pose-graph localization` is where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using the scan matcher, but not update the underlaying map long-term should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The lifelong mapping/continuous slam mode above will do better if you'd like to modify the underlying graph while moving. This method of localization might not be suitable for all applications, it does require quite a bit of tuning for your particular robot and needs high quality odometry. If in doubt, you're always welcome to use other 2D map localizers in the ecosystem like AMCL. For most beginners or users looking for a good out of the box experience, I'd recommend AMCL. 
+In summary, this approach I dub `elastic pose-graph localization` is where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using the scan matcher, but not update the underlaying map long-term should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The lifelong mapping/continuous slam mode above will do better if you'd like to modify the underlying graph while moving.
 
 ## Tools 
 
@@ -127,6 +125,14 @@ This uses RVIZ and the plugin to load any number of posegraphs that will show up
 It's more of a demonstration of other things you can do once you have the raw data to work with, but I don't suspect many people will get much use out of it unless you're used to stitching maps by hand.
 
 More information in the RVIZ Plugin section below.
+
+#### Pose Graph Merging
+
+This is under development.
+
+This is to solve the problem of merging many maps together with an initial guess of location in an elastic sense. This is something you just can't get if you don't have the full pose-graph and raw data to work with -- which we have from our continuous mapping work.
+
+Hint: This is also really good for multi-robot map updating as well :)  
 
 ### RVIZ Plugin
 
@@ -168,16 +174,14 @@ The following are the services/topics that are exposed for use. See the rviz plu
 
 ## Subscribed topics
 
-| /scan  | `sensor_msgs/LaserScan` | the input scan from your laser to utilize | 
+| scan  | `sensor_msgs/LaserScan` | the input scan from your laser to utilize | 
 |-----|----|----|
 | **tf** | N/A | a valid transform from your configured odom_frame to base_frame |
 
 ## Published topics
 
-| Topic  | Type | Description | 
-|-----|----|----|
 | map  | `nav_msgs/OccupancyGrid` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
-| pose | `geometry_msgs/PoseWithCovarianceStamped` | pose of the base_frame in the configured map_frame along with the covariance calculated from the scan match |
+|-----|----|----|
 
 ## Exposed Services
 
@@ -220,10 +224,6 @@ The following settings and options are exposed to you. My default configuration 
 
 `base_frame` - Base frame
 
-`scan_topic` - scan topic, *absolute* path, ei `/scan` not `scan`
-
-`scan_queue_size` - The number of scan messages to queue up before throwing away old ones. Should always be set to 1 in async mode
-
 `map_file_name` - Name of the pose-graph file to load on startup if available
 
 `map_start_pose` - Pose to start pose-graph mapping/localization in, if available
@@ -239,10 +239,6 @@ The following settings and options are exposed to you. My default configuration 
 `map_update_interval` - Interval to update the 2D occupancy map for other applications / visualization
 
 `enable_interactive_mode` - Whether or not to allow for interactive mode to be enabled. Interactive mode will retain a cache of laser scans mapped to their ID for visualization in interactive mode. As a result the memory for the process will increase. This is manually disabled in localization and lifelong modes since they would increase the memory utilization over time. Valid for either mapping or continued mapping modes.
-
-`position_covariance_scale` - Amount to scale position covariance when publishing pose from scan match.  This can be used to tune the influence of the pose position in a downstream localization filter.  The covariance represents the uncertainty of the measurement, so scaling up the covariance will result in the pose position having less influence on downstream filters.  Default: 1.0
-
-`yaw_covariance_scale` - Amount to scale yaw covariance when publishing pose from scan match.  See description of position_covariance_scale.  Default: 1.0
 
 `resolution` - Resolution of the 2D occupancy map to generate
 
@@ -322,15 +318,11 @@ ROSDep will take care of the major things
 rosdep install -q -y -r --from-paths src --ignore-src
 ```
 
-Or install via apt
+Also released in Melodic / Dashing to the ROS build farm to install debians.
 
-```
-apt install ros-eloquent-slam-toolbox
-```
+Run your catkin build procedure of choice.
 
-Run your colcon build procedure of choice.
-
-You can run via `ros2 launch slam_toolbox online_sync_launch.py`
+You can run via `roslaunch slam_toolbox online_sync.launch`
 
 # Etc
 
@@ -343,7 +335,7 @@ In order to do some operations quickly for continued mapping and localization, I
 
 Snap are completely isolated containerized packages that one can run through the Canonical organization on a large number of Linux distributions. They're similar to Docker containers but it doesn't share the kernel or any of the libraries, and rather has everything internal as essentially a seperate partitioned operating system based on Ubuntu Core. 
 
-We package up slam toolbox in this way for a nice multiple-on speed up in execution from a couple of pretty nuanced reasons in this particular project, but generally speaking you shouldn't expect a speedup from a snap. 
+We package up slam toolbox in this way for a nice multiple-on speed up in execution from a couple of pretty nuanced reasons in this particular project, but generally speaking you shouldn't expect a speedup from a snap. There's a generate snap script in the `snap` directory to create a snap.
 
 Since Snaps are totally isolated and there's no override flags like in Docker, there's only a couple of fixed directories that both the snap and the host system can write and read from, including SNAP_COMMON (usually in `/var/snap/[snap name]/common`). Therefore, this is the place that if you're serializing and deserializing maps, you need to have them accessible to that directory. 
 
