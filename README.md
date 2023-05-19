@@ -1,3 +1,26 @@
+## slam_toolbox (iron) - 2.7.0-1
+
+The packages in the `slam_toolbox` repository were released into the `iron` distro by running `/usr/bin/bloom-release slam_toolbox --rosdistro iron --track iron --edit` on `Fri, 19 May 2023 20:26:43 -0000`
+
+The `slam_toolbox` package was released.
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `2.7.0-1`
+
+Versions of tools used:
+
+- bloom version: `0.11.2`
+- catkin_pkg version: `0.5.2`
+- rosdep version: `0.22.2`
+- rosdistro version: `0.9.0`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (noetic) - 1.5.7-1
 
 The packages in the `slam_toolbox` repository were released into the `noetic` distro by running `/usr/bin/bloom-release slam_toolbox --rosdistro noetic --track noetic` on `Wed, 21 Dec 2022 01:29:59 -0000`
