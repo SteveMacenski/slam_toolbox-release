@@ -1,3 +1,26 @@
+## slam_toolbox (humble) - 2.6.5-1
+
+The packages in the `slam_toolbox` repository were released into the `humble` distro by running `/usr/bin/bloom-release slam_toolbox --rosdistro humble --track humble` on `Fri, 04 Aug 2023 18:12:16 -0000`
+
+The `slam_toolbox` package was released.
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: https://github.com/SteveMacenski/slam_toolbox-release.git
+- rosdistro version: `2.6.4-1`
+- old version: `2.6.4-1`
+- new version: `2.6.5-1`
+
+Versions of tools used:
+
+- bloom version: `0.11.2`
+- catkin_pkg version: `0.5.2`
+- rosdep version: `0.22.2`
+- rosdistro version: `0.9.0`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (iron) - 2.7.0-2
 
 The packages in the `slam_toolbox` repository were released into the `iron` distro by running `/usr/bin/bloom-release slam_toolbox --rosdistro iron --track iron --edit` on `Thu, 25 May 2023 18:40:02 -0000`
