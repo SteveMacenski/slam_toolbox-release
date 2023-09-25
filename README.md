@@ -47,13 +47,6 @@ The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/
 
 ![map_image](/images/circuit_launch.gif?raw=true "Map Image")
 
-An overview of how the map was generated is presented below:
-![slam_toolbox_sync_diagram](/images/slam_toolbox_sync.png)
-1. ROS Node: SLAM toolbox is run in synchronous mode, which generates a ROS node. This node subscribes to laser scan and odometry topics, and publishes map to odom transform and a map.
-2. Get odometry and LIDAR data: A callback for the laser topic will generate a pose (using odometry) and a laser scan tied at that node. These PosedScan objects form a queue, which are processed by the algorithm.
-3. Process Data: The queue of PosedScan objects are used to construct a pose graph; odometry is refined using laser scan matching. This pose graph is used to compute robot pose, and find loop closures. If a loop closure is found, the pose graph is optimized, and pose estimates are updated. Pose estimates are used to compute and publish a map to odom transform for the robot.
-4. Mapping: Laser scans associated with each pose in the pose graph are used to construct and publish a map.
-
 # Support and Contribution
 
 If you have any questions on use or configuration, please post your questions on [ROS Answers](answers.ros.org) and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
@@ -86,7 +79,7 @@ Our lifelong mapping consists of a few key steps
 - KD-Tree search matching to locate the robot in its position on reinitalization
 - pose-graph optimizition based SLAM with 2D scan matching abstraction 
 
-This will allow the user to create and update existing maps, then serialize the data for use in other mapping sessions, something sorely lacking from most SLAM implementations and nearly all planar SLAM implementations. Other good libraries that do this include RTab-Map and Cartographer, though they themselves have their own quirks that make them (in my opinion) unusable for production robotics applications. This library provides the mechanics to save not only the data, but the pose graph, and associated metadata to work with. This has been used to create maps by merging techniques (taking 2 or more serialized objects and creating 1 globally consistent one) as well as continuous mapping techniques (updating 1, same, serialized map object over time and refining it). The major benefit of this over RTab-Map or Cartographer is the maturity of the underlying (but heavily modified) `open_karto` library the project is based on. The scan matcher of Karto is well known as an extremely good matcher for 2D laser scans and modified versions of Karto can be found in companies across the world. 
+This will allow the user to create and update existing maps, then serialize the data for use in other mapping sessions, something sorely lacking from most SLAM implementations and nearly all planar SLAM implementations. Other good libraries that do this include RTab-Map and Cartoprapher, though they themselves have their own quirks that make them (in my opinion) unusable for production robotics applications. This library provides the mechanics to save not only the data, but the pose graph, and associated metadata to work with. This has been used to create maps by merging techniques (taking 2 or more serialized objects and creating 1 globally consistent one) as well as continuous mapping techniques (updating 1, same, serialized map object over time and refining it). The major benefit of this over RTab-Map or Cartoprapher is the maturity of the underlying (but heavily modified) `open_karto` library the project is based on. The scan matcher of Karto is well known as an extremely good matcher for 2D laser scans and modified versions of Karto can be found in companies across the world. 
 
 Slam Toolbox supports all the major modes:
 - Starting from a predefined dock (assuming to be near start region)
@@ -230,6 +223,8 @@ The following settings and options are exposed to you. My default configuration 
 `scan_topic` - scan topic, *absolute* path, ei `/scan` not `scan`
 
 `scan_queue_size` - The number of scan messages to queue up before throwing away old ones. Should always be set to 1 in async mode
+
+`use_map_saver` - Instantiate the map saver service and self-subscribe to the map topic
 
 `map_file_name` - Name of the pose-graph file to load on startup if available
 
