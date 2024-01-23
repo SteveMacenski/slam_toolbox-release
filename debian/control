@@ -1,0 +1,12 @@
+Source: ros-humble-slam-toolbox
+Section: misc
+Priority: optional
+Maintainer: Steve Macenski <stevenmacenski@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), libboost-all-dev, libceres-dev, libeigen3-dev, liblapack-dev, libqt5core5a, libqt5widgets5, libsuitesparse-dev, libtbb-dev, qtbase5-dev, ros-humble-ament-cmake, ros-humble-ament-cmake-cpplint <!nocheck>, ros-humble-ament-cmake-flake8 <!nocheck>, ros-humble-ament-cmake-gtest <!nocheck>, ros-humble-ament-cmake-uncrustify <!nocheck>, ros-humble-ament-lint-auto <!nocheck>, ros-humble-builtin-interfaces, ros-humble-interactive-markers, ros-humble-launch <!nocheck>, ros-humble-launch-testing <!nocheck>, ros-humble-message-filters, ros-humble-nav-msgs, ros-humble-pluginlib, ros-humble-rclcpp, ros-humble-rosidl-default-generators, ros-humble-rviz-common, ros-humble-rviz-default-plugins, ros-humble-rviz-ogre-vendor, ros-humble-rviz-rendering, ros-humble-sensor-msgs, ros-humble-std-msgs, ros-humble-std-srvs, ros-humble-tf2, ros-humble-tf2-geometry-msgs, ros-humble-tf2-ros, ros-humble-tf2-sensor-msgs, ros-humble-visualization-msgs, ros-humble-ros-workspace, ros-humble-rosidl-typesupport-fastrtps-c, ros-humble-rosidl-typesupport-fastrtps-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-humble-slam-toolbox
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libboost-all-dev, libceres-dev, libeigen3-dev, liblapack-dev, libqt5core5a, libqt5gui5, libqt5opengl5, libqt5widgets5, libsuitesparse-dev, libtbb-dev, ros-humble-builtin-interfaces, ros-humble-interactive-markers, ros-humble-message-filters, ros-humble-nav-msgs, ros-humble-nav2-map-server, ros-humble-pluginlib, ros-humble-rclcpp, ros-humble-rosidl-default-generators, ros-humble-rviz-common, ros-humble-rviz-default-plugins, ros-humble-rviz-ogre-vendor, ros-humble-rviz-rendering, ros-humble-sensor-msgs, ros-humble-std-msgs, ros-humble-std-srvs, ros-humble-tf2, ros-humble-tf2-geometry-msgs, ros-humble-tf2-ros, ros-humble-tf2-sensor-msgs, ros-humble-visualization-msgs, ros-humble-ros-workspace
+Description: This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
