@@ -1,16 +1,12 @@
 ## Slam Toolbox
 
-| DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) | [![Build Status](https://img.shields.io/docker/pulls/stevemacenski/slam-toolbox.svg?maxAge=2592000)](https://hub.docker.com/r/stevemacenski/slam-toolbox) |
-|-----|----|----|
-| **Build Farm** | [![Build Status](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/) | N/A |
-
 We've received feedback from users and have robots operating in the following environments with SLAM Toolbox:
 - Retail
 - Warehouses
 - Libraries
 - Research
 
-It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS2 Navigation here](https://navigation.ros.org/tutorials/docs/navigation2_with_slam.html).
+It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS 2 Nav2 here](https://docs.nav2.org/tutorials/docs/navigation2_with_slam.html).
 
 ### Cite This Work
 
@@ -198,6 +194,7 @@ The following are the services/topics that are exposed for use. See the rviz plu
 | `/slam_toolbox/save_map`  | `slam_toolbox/SaveMap` | Save the map image file of the pose-graph that is useable for display or AMCL localization. It is a simple wrapper on `map_server/map_saver` but is useful. | 
 | `/slam_toolbox/serialize_map`  | `slam_toolbox/SerializePoseGraph` | Save the map pose-graph and datathat is useable for continued mapping, slam_toolbox localization, offline manipulation, and more | 
 | `/slam_toolbox/toggle_interactive_mode`  | `slam_toolbox/ToggleInteractive` | Toggling in and out of interactive mode, publishing interactive markers of the nodes and their positions to be updated in an application | 
+| `/slam_toolbox/reset`  | `slam_toolbox/Reset` | Reset current map back to the initial state | 
 
 # Configuration
 
@@ -266,6 +263,8 @@ The following settings and options are exposed to you. My default configuration 
 `stack_size_to_use` - The number of bytes to reset the stack size to, to enable serialization/deserialization of files. A liberal default is 40000000, but less is fine.
 
 `minimum_travel_distance` - Minimum distance of travel before processing a new scan
+
+`localization_on_configure` - Set to true to set the localization mode to localization during node on_configure transition. Set to false to set the localization mode to mapping instead. Only applies to `map_and_localization_slam_toolbox` node.
 
 ## Matcher Params
 
