@@ -1,0 +1,12 @@
+Source: ros-jazzy-slam-toolbox
+Section: misc
+Priority: optional
+Maintainer: Steve Macenski <stevenmacenski@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), libboost-all-dev, libceres-dev, libeigen3-dev, liblapack-dev, libqt5core5a, libqt5widgets5, libsuitesparse-dev, libtbb-dev, qtbase5-dev, ros-jazzy-ament-cmake, ros-jazzy-ament-cmake-cpplint <!nocheck>, ros-jazzy-ament-cmake-flake8 <!nocheck>, ros-jazzy-ament-cmake-gtest <!nocheck>, ros-jazzy-ament-cmake-uncrustify <!nocheck>, ros-jazzy-ament-lint-auto <!nocheck>, ros-jazzy-bond, ros-jazzy-bondcpp, ros-jazzy-builtin-interfaces, ros-jazzy-interactive-markers, ros-jazzy-launch <!nocheck>, ros-jazzy-launch-testing <!nocheck>, ros-jazzy-lifecycle-msgs, ros-jazzy-message-filters, ros-jazzy-nav-msgs, ros-jazzy-pluginlib, ros-jazzy-rclcpp, ros-jazzy-rclcpp-lifecycle, ros-jazzy-rosidl-default-generators, ros-jazzy-rviz-common, ros-jazzy-rviz-default-plugins, ros-jazzy-rviz-ogre-vendor, ros-jazzy-rviz-rendering, ros-jazzy-sensor-msgs, ros-jazzy-std-msgs, ros-jazzy-std-srvs, ros-jazzy-tf2, ros-jazzy-tf2-geometry-msgs, ros-jazzy-tf2-ros, ros-jazzy-tf2-sensor-msgs, ros-jazzy-visualization-msgs, ros-jazzy-ros-workspace, ros-jazzy-rosidl-typesupport-fastrtps-c, ros-jazzy-rosidl-typesupport-fastrtps-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-jazzy-slam-toolbox
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libboost-all-dev, libceres-dev, libeigen3-dev, liblapack-dev, libqt5core5a, libqt5gui5, libqt5opengl5, libqt5widgets5, libsuitesparse-dev, libtbb-dev, ros-jazzy-bond, ros-jazzy-bondcpp, ros-jazzy-builtin-interfaces, ros-jazzy-interactive-markers, ros-jazzy-lifecycle-msgs, ros-jazzy-message-filters, ros-jazzy-nav-msgs, ros-jazzy-pluginlib, ros-jazzy-rclcpp, ros-jazzy-rclcpp-lifecycle, ros-jazzy-rosidl-default-generators, ros-jazzy-rviz-common, ros-jazzy-rviz-default-plugins, ros-jazzy-rviz-ogre-vendor, ros-jazzy-rviz-rendering, ros-jazzy-sensor-msgs, ros-jazzy-std-msgs, ros-jazzy-std-srvs, ros-jazzy-tf2, ros-jazzy-tf2-geometry-msgs, ros-jazzy-tf2-ros, ros-jazzy-tf2-sensor-msgs, ros-jazzy-visualization-msgs, ros-jazzy-ros-workspace
+Description: This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
