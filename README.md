@@ -248,6 +248,8 @@ The following settings and options are exposed to you. My default configuration 
 
 `resolution` - Resolution of the 2D occupancy map to generate
 
+`min_laser_range` - Minimum laser range to use for 2D occupancy map rasterizing
+
 `max_laser_range` - Maximum laser range to use for 2D occupancy map rasterizing
 
 `minimum_time_interval` - The minimum duration of time between scans to be processed in synchronous mode
