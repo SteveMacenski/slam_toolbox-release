@@ -25,10 +25,6 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(lifecycle_msgs REQUIRED)
-find_package(bondcpp REQUIRED)
-find_package(bond REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
@@ -57,10 +53,6 @@ set(dependencies
   std_msgs
   std_srvs
   builtin_interfaces
-  rclcpp_lifecycle
-  bondcpp
-  bond
-  lifecycle_msgs
   rviz_common
   rviz_default_plugins
   rviz_ogre_vendor
@@ -97,23 +89,23 @@ include_directories(include lib/karto_sdk/include
                             ${EIGEN3_INCLUDE_DIRS}
                             ${CHOLMOD_INCLUDE_DIR}
                             ${Boost_INCLUDE_DIRS}
+                            ${TBB_INCLUDE_DIRS}
                             ${CERES_INCLUDES}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  srvs/Pause.srv
-  srvs/Reset.srv
-  srvs/ClearQueue.srv
-  srvs/ToggleInteractive.srv
-  srvs/Clear.srv
-  srvs/SaveMap.srv
-  srvs/LoopClosure.srv
-  srvs/MergeMaps.srv
-  srvs/AddSubmap.srv
-  srvs/DeserializePoseGraph.srv
-  srvs/SerializePoseGraph.srv
+  srv/Pause.srv
+  srv/ClearQueue.srv
+  srv/ToggleInteractive.srv
+  srv/Clear.srv
+  srv/SaveMap.srv
+  srv/LoopClosure.srv
+  srv/MergeMaps.srv
+  srv/AddSubmap.srv
+  srv/DeserializePoseGraph.srv
+  srv/SerializePoseGraph.srv
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs nav_msgs visualization_msgs
 )
 
@@ -134,13 +126,14 @@ rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typ
 target_link_libraries(SlamToolboxPlugin "${cpp_typesupport_target}")
 target_compile_definitions(SlamToolboxPlugin PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 target_compile_definitions(SlamToolboxPlugin PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
-pluginlib_export_plugin_description_file(rviz_common rviz_plugins.xml)
+pluginlib_export_plugin_description_file(rviz_common rviz_plugins.xml) 
 
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
 ament_target_dependencies(ceres_solver_plugin ${dependencies})
 target_link_libraries(ceres_solver_plugin ${CERES_LIBRARIES}
                                           ${Boost_LIBRARIES}
+                                          ${TBB_LIBRARIES}
                                           kartoSlamToolbox
 )
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
@@ -207,7 +200,6 @@ install(TARGETS async_slam_toolbox_node
                 sync_slam_toolbox_node
                 localization_slam_toolbox_node
                 map_and_localization_slam_toolbox_node
-                lifelong_slam_toolbox_node
                 merge_maps_kinematic
                 ${libraries}
                 kartoSlamToolbox

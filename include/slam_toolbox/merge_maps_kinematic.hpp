@@ -101,7 +101,6 @@ private:
   std::map<int, Eigen::Vector3d> submap_locations_;
   std::vector<karto::LocalizedRangeScanVector> scans_vec_;
   std::map<int, tf2::Transform> submap_marker_transform_;
-  std::map<int, tf2::Transform> prev_submap_marker_transform_;
   double resolution_;
   int num_submaps_;
 };
