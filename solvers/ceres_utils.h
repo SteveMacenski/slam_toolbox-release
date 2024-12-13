@@ -7,7 +7,7 @@
 #define SOLVERS__CERES_UTILS_H_
 
 #include <ceres/ceres.h>
-#include <ceres/local_parameterization.h>
+#include <ceres/autodiff_manifold.h>
 #include <cmath>
 #include <utility>
 
@@ -35,21 +35,27 @@ inline T NormalizeAngle(const T & angle_radians)
 /*****************************************************************************/
 /*****************************************************************************/
 
-class AngleLocalParameterization
-{
-public:
-  template<typename T>
-  bool operator()(
-    const T * theta_radians, const T * delta_theta_radians,
-    T * theta_radians_plus_delta) const
-  {
-    *theta_radians_plus_delta = NormalizeAngle(*theta_radians + *delta_theta_radians);
+// Defines a manifold for updating the angle to be constrained in [-pi to pi).
+class AngleManifold {
+ public:
+  template <typename T>
+  bool Plus(const T* x_radians,
+            const T* delta_radians,
+            T* x_plus_delta_radians) const {
+    *x_plus_delta_radians = NormalizeAngle(*x_radians + *delta_radians);
     return true;
   }
 
-  static ceres::LocalParameterization * Create()
-  {
-    return new ceres::AutoDiffLocalParameterization<AngleLocalParameterization, 1, 1>;
+  template <typename T>
+  bool Minus(const T* y_radians,
+             const T* x_radians,
+             T* y_minus_x_radians) const {
+    *y_minus_x_radians = NormalizeAngle(*y_radians - *x_radians);
+    return true;
+  }
+
+  static ceres::Manifold* Create() {
+    return new ceres::AutoDiffManifold<AngleManifold, 1, 1>;
   }
 };
 
