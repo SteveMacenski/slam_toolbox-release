@@ -99,7 +99,28 @@ karto::LaserRangeFinder * LaserAssistant::makeLaser(const double & mountingYaw)
     karto::LaserRangeFinder_Custom, karto::Name("Custom Described Lidar"));
   laser->SetOffsetPose(karto::Pose2(laser_pose_.transform.translation.x,
     laser_pose_.transform.translation.y, mountingYaw));
-  laser->SetMinimumRange(scan_.range_min);
+
+  double min_laser_range = 0.0;
+  if (!node_->has_parameter("min_laser_range")) {
+    node_->declare_parameter("min_laser_range", min_laser_range);
+  }
+  node_->get_parameter("min_laser_range", min_laser_range);
+
+  if (min_laser_range < 0) {
+    RCLCPP_WARN(node_->get_logger(),
+      "You've set minimum laser range to be negative,"
+      "this isn't allowed so it will be set to (%.1f).", scan_.range_min);
+    min_laser_range = scan_.range_min;
+  }
+
+  if (min_laser_range < scan_.range_min) {
+    RCLCPP_WARN(node_->get_logger(),
+      "minimum laser range setting (%.1f m) exceeds the capabilities "
+      "of the used Lidar (%.1f m)", min_laser_range, scan_.range_min);
+    min_laser_range = scan_.range_min;
+  }
+
+  laser->SetMinimumRange(min_laser_range);
   laser->SetMaximumRange(scan_.range_max);
   laser->SetMinimumAngle(scan_.angle_min);
   laser->SetMaximumAngle(scan_.angle_max);
