@@ -30,7 +30,6 @@ class LifelongSlamToolbox : public SlamToolbox
 public:
   explicit LifelongSlamToolbox(rclcpp::NodeOptions options);
   ~LifelongSlamToolbox() {}
-  CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
 
   // computation metrics
   double computeObjectiveScore(

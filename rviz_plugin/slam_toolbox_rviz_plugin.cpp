@@ -48,39 +48,39 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget * parent)
 
   bool paused_measure = false, interactive = false;
   paused_measure = ros_node_->declare_parameter(
-    "slam_toolbox/paused_new_measurements", paused_measure);
+    "/slam_toolbox/paused_new_measurements", paused_measure);
   interactive = ros_node_->declare_parameter(
-    "slam_toolbox/interactive_mode", interactive);
-
+    "/slam_toolbox/interactive_mode", interactive);
+    
   _initialposeSub =
     ros_node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "initialpose", 10,
+    "/initialpose", 10,
     std::bind(&SlamToolboxPlugin::InitialPoseCallback, this, std::placeholders::_1));
 
   _serialize =
     ros_node_->create_client<slam_toolbox::srv::SerializePoseGraph>(
-    "slam_toolbox/serialize_map");
+    "/slam_toolbox/serialize_map");
   _load_map =
     ros_node_->create_client<slam_toolbox::srv::DeserializePoseGraph>(
-    "slam_toolbox/deserialize_map");
+    "/slam_toolbox/deserialize_map");
   _clearChanges = ros_node_->create_client<slam_toolbox::srv::Clear>(
-    "slam_toolbox/clear_changes");
+    "/slam_toolbox/clear_changes");
   _saveChanges = ros_node_->create_client<slam_toolbox::srv::LoopClosure>(
-    "slam_toolbox/manual_loop_closure");
+    "/slam_toolbox/manual_loop_closure");
   _saveMap = ros_node_->create_client<slam_toolbox::srv::SaveMap>(
-    "slam_toolbox/save_map");
+    "/slam_toolbox/save_map");
   _clearQueue = ros_node_->create_client<slam_toolbox::srv::ClearQueue>(
-    "slam_toolbox/clear_queue");
+    "/slam_toolbox/clear_queue");
   _interactive =
     ros_node_->create_client<slam_toolbox::srv::ToggleInteractive>(
-    "slam_toolbox/toggle_interactive_mode");
+    "/slam_toolbox/toggle_interactive_mode");
   _pause_measurements = ros_node_->create_client<slam_toolbox::srv::Pause>(
-    "slam_toolbox/pause_new_measurements");
+    "/slam_toolbox/pause_new_measurements");
   _load_submap_for_merging =
     ros_node_->create_client<slam_toolbox::srv::AddSubmap>(
-    "slam_toolbox/add_submap");
+    "/slam_toolbox/add_submap");
   _merge = ros_node_->create_client<slam_toolbox::srv::MergeMaps>(
-    "slam_toolbox/merge_submaps");
+    "/slam_toolbox/merge_submaps");
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
@@ -252,7 +252,7 @@ SlamToolboxPlugin::~SlamToolboxPlugin()
   _thread->join();
   _thread.reset();
 }
-
+  
 /*****************************************************************************/
 void SlamToolboxPlugin::InitialPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
@@ -553,33 +553,21 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
   auto node = std::make_shared<rclcpp::Node>("SlamToolboxStateUpdateNode");
   auto parameters_client =
     std::make_shared<rclcpp::SyncParametersClient>(node, "slam_toolbox");
-  auto log_trigger = true;
 
   while (rclcpp::ok()) {
     auto parameters = parameters_client->get_parameters(
-      {"paused_new_measurements", "interactive_mode"}, std::chrono::seconds(1));
-    if (parameters.empty()) {
-      RCLCPP_INFO_THROTTLE(
-        ros_node_->get_logger(), *ros_node_->get_clock(), 5000,
-        "Waiting for the slam_toolbox node configuration.");
-      log_trigger = true;
-    } else {
-      RCLCPP_INFO_EXPRESSION(
-        ros_node_->get_logger(), log_trigger,
-        "Start the slam_toolbox node state check.");
-      log_trigger = false;
+      {"paused_new_measurements", "interactive_mode"});
+    paused_measure = parameters[0].as_bool();
+    interactive = parameters[1].as_bool();
 
-      paused_measure = parameters[0].as_bool();
-      interactive = parameters[1].as_bool();
+    bool oldState = _check1->blockSignals(true);
+    _check1->setChecked(interactive);
+    _check1->blockSignals(oldState);
 
-      bool oldState = _check1->blockSignals(true);
-      _check1->setChecked(interactive);
-      _check1->blockSignals(oldState);
+    oldState = _check2->blockSignals(true);
+    _check2->setChecked(!paused_measure);
+    _check2->blockSignals(oldState);
 
-      oldState = _check2->blockSignals(true);
-      _check2->setChecked(!paused_measure);
-      _check2->blockSignals(oldState);
-    }
     r.sleep();
   }
 }

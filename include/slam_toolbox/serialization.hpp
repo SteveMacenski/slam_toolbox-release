@@ -22,9 +22,7 @@
 #include <sys/stat.h>
 #include <vector>
 #include <string>
-#include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "karto_sdk/Mapper.h"
 
 namespace serialization
@@ -36,12 +34,11 @@ inline bool fileExists(const std::string & name)
   return stat(name.c_str(), &buffer) == 0;
 }
 
-template<class NodeT>
 inline bool write(
   const std::string & filename,
   karto::Mapper & mapper,
   karto::Dataset & dataset,
-  NodeT node)
+  rclcpp::Node::SharedPtr node)
 {
   try {
     mapper.SaveToFile(filename + std::string(".posegraph"));
@@ -54,12 +51,11 @@ inline bool write(
   }
 }
 
-template<class NodeT>
 inline bool read(
   const std::string & filename,
   karto::Mapper & mapper,
   karto::Dataset & dataset,
-  NodeT node)
+  rclcpp::Node::SharedPtr node)
 {
   if (!fileExists(filename + std::string(".posegraph"))) {
     RCLCPP_ERROR(node->get_logger(),

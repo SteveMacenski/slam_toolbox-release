@@ -7,17 +7,16 @@
 #define SOLVERS__CERES_SOLVER_HPP_
 
 #include <math.h>
+#include <ceres/local_parameterization.h>
 #include <ceres/ceres.h>
 #include <vector>
 #include <unordered_map>
 #include <utility>
 #include <cmath>
-#include <memory>
 #include "karto_sdk/Mapper.h"
 #include "solvers/ceres_utils.h"
 
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
 
@@ -39,8 +38,7 @@ public:
   virtual void Compute();  // Solve
   virtual void Clear();  // Resets the corrections
   virtual void Reset();  // Resets the solver plugin clean
-
-  virtual void Configure(rclcpp_lifecycle::LifecycleNode::SharedPtr node);
+  virtual void Configure(rclcpp::Node::SharedPtr node);
 
   // Adds a node to the solver
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan> * pVertex);
@@ -67,7 +65,7 @@ private:
   ceres::Problem::Options options_problem_;
   ceres::LossFunction * loss_function_;
   ceres::Problem * problem_;
-  ceres::Manifold * angle_manifold_;
+  ceres::LocalParameterization * angle_local_parameterization_;
   bool was_constant_set_, debug_logging_;
 
   // graph
@@ -77,7 +75,7 @@ private:
   boost::mutex nodes_mutex_;
 
   // ros
-  rclcpp::Logger logger_{rclcpp::get_logger("CeresSolver")};
+  rclcpp::Node::SharedPtr node_;
 };
 
 }  // namespace solver_plugins

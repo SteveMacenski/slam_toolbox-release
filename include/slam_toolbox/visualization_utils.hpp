@@ -20,10 +20,7 @@
 #define SLAM_TOOLBOX__VISUALIZATION_UTILS_HPP_
 
 #include <string>
-#include <memory>
 
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/interactive_marker.hpp"
 #include "visualization_msgs/msg/interactive_marker_feedback.hpp"
@@ -31,12 +28,11 @@
 namespace vis_utils
 {
 
-template<class NodeT>
 inline visualization_msgs::msg::Marker toMarker(
   const std::string & frame,
   const std::string & ns,
   const double & scale,
-  NodeT node)
+  rclcpp::Node::SharedPtr node)
 {
   visualization_msgs::msg::Marker marker;
 
@@ -59,11 +55,10 @@ inline visualization_msgs::msg::Marker toMarker(
   return marker;
 }
 
-template<class NodeT>
 inline visualization_msgs::msg::InteractiveMarker toInteractiveMarker(
   visualization_msgs::msg::Marker & marker,
   const double & scale,
-  NodeT node)
+  rclcpp::Node::SharedPtr node)
 {
   // marker basics
   visualization_msgs::msg::InteractiveMarker int_marker;

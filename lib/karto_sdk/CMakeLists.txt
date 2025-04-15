@@ -16,7 +16,6 @@ find_package(TBB REQUIRED NO_CMAKE_PACKAGE_REGISTRY)
 
 set(dependencies
   rclcpp
-  rclcpp_lifecycle
 )
 
 include_directories(include ${EIGEN3_INCLUDE_DIRS} 
