@@ -1,3 +1,26 @@
+## slam_toolbox (kilted) - 2.9.0-1
+
+The packages in the `slam_toolbox` repository were released into the `kilted` distro by running `/usr/bin/bloom-release slam_toolbox --rosdistro kilted --track kilted --edit` on `Thu, 29 May 2025 22:08:51 -0000`
+
+The `slam_toolbox` package was released.
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `2.9.0-1`
+
+Versions of tools used:
+
+- bloom version: `0.12.0`
+- catkin_pkg version: `1.0.0`
+- rosdep version: `0.25.1`
+- rosdistro version: `1.0.1`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (humble) - 2.6.10-1
 
 The packages in the `slam_toolbox` repository were released into the `humble` distro by running `/usr/bin/bloom-release slam_toolbox --rosdistro humble --track humble` on `Tue, 15 Apr 2025 22:15:53 -0000`
