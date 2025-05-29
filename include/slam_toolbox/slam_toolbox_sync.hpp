@@ -33,6 +33,8 @@ public:
   explicit SynchronousSlamToolbox(rclcpp::NodeOptions options);
   ~SynchronousSlamToolbox() {}
   void run();
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
 
 protected:
   void laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override;
@@ -44,6 +46,10 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override;
+  bool resetCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<slam_toolbox::srv::Reset::Request> req,
+    std::shared_ptr<slam_toolbox::srv::Reset::Response> resp) override;
 
   std::queue<PosedScan> q_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::ClearQueue>> ssClear_;
