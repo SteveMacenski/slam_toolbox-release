@@ -1,0 +1,12 @@
+Source: ros-kilted-slam-toolbox
+Section: misc
+Priority: optional
+Maintainer: Steve Macenski <stevenmacenski@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), libboost-all-dev, libceres-dev, libeigen3-dev, liblapack-dev, libqt5core5t64, libqt5widgets5, libsuitesparse-dev, libtbb-dev, qtbase5-dev, ros-kilted-ament-cmake, ros-kilted-ament-cmake-cpplint <!nocheck>, ros-kilted-ament-cmake-flake8 <!nocheck>, ros-kilted-ament-cmake-gtest <!nocheck>, ros-kilted-ament-cmake-uncrustify <!nocheck>, ros-kilted-ament-lint-auto <!nocheck>, ros-kilted-bond, ros-kilted-bondcpp, ros-kilted-builtin-interfaces, ros-kilted-interactive-markers, ros-kilted-launch <!nocheck>, ros-kilted-launch-testing <!nocheck>, ros-kilted-lifecycle-msgs, ros-kilted-message-filters, ros-kilted-nav-msgs, ros-kilted-pluginlib, ros-kilted-rclcpp, ros-kilted-rclcpp-lifecycle, ros-kilted-rosidl-default-generators, ros-kilted-rviz-common, ros-kilted-rviz-default-plugins, ros-kilted-rviz-ogre-vendor, ros-kilted-rviz-rendering, ros-kilted-sensor-msgs, ros-kilted-std-msgs, ros-kilted-std-srvs, ros-kilted-tf2, ros-kilted-tf2-geometry-msgs, ros-kilted-tf2-ros, ros-kilted-tf2-sensor-msgs, ros-kilted-visualization-msgs, ros-kilted-ros-workspace, ros-kilted-rosidl-typesupport-fastrtps-c, ros-kilted-rosidl-typesupport-fastrtps-cpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-kilted-slam-toolbox
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libboost-all-dev, libceres-dev, libeigen3-dev, liblapack-dev, libqt5core5t64, libqt5gui5, libqt5opengl5, libqt5widgets5, libsuitesparse-dev, libtbb-dev, ros-kilted-bond, ros-kilted-bondcpp, ros-kilted-builtin-interfaces, ros-kilted-interactive-markers, ros-kilted-lifecycle-msgs, ros-kilted-message-filters, ros-kilted-nav-msgs, ros-kilted-nav2-map-server, ros-kilted-pluginlib, ros-kilted-rclcpp, ros-kilted-rclcpp-lifecycle, ros-kilted-rosidl-default-generators, ros-kilted-rviz-common, ros-kilted-rviz-default-plugins, ros-kilted-rviz-ogre-vendor, ros-kilted-rviz-rendering, ros-kilted-sensor-msgs, ros-kilted-std-msgs, ros-kilted-std-srvs, ros-kilted-tf2, ros-kilted-tf2-geometry-msgs, ros-kilted-tf2-ros, ros-kilted-tf2-sensor-msgs, ros-kilted-visualization-msgs, ros-kilted-ros-workspace
+Description: This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
