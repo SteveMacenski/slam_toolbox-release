@@ -21,7 +21,6 @@
 #include <string>
 #include <chrono>
 #include "slam_toolbox/slam_toolbox_common.hpp"
-#include "rclcpp/rclcpp/qos.hpp"
 #include "slam_toolbox/serialization.hpp"
 
 namespace slam_toolbox
@@ -393,6 +392,12 @@ void SlamToolbox::setParams()
   }
   enable_interactive_mode_ = this->get_parameter("enable_interactive_mode").as_bool();
 
+  restamp_tf_ = false;
+  if (!this->has_parameter("restamp_tf")) {
+    this->declare_parameter("restamp_tf", restamp_tf_);
+  }
+  restamp_tf_ = this->get_parameter("restamp_tf").as_bool();
+
   double tmp_val = 0.5;
   if (!this->has_parameter("transform_timeout")) {
     this->declare_parameter("transform_timeout", tmp_val);
@@ -404,6 +409,13 @@ void SlamToolbox::setParams()
   }
   tmp_val = this->get_parameter("minimum_time_interval").as_double();
   minimum_time_interval_ = rclcpp::Duration::from_seconds(tmp_val);
+
+  check_min_dist_and_heading_precisely_ = false;
+  if (!this->has_parameter("check_min_dist_and_heading_precisely")) {
+    this->declare_parameter("check_min_dist_and_heading_precisely", check_min_dist_and_heading_precisely_);
+  }
+  check_min_dist_and_heading_precisely_ =
+    this->get_parameter("check_min_dist_and_heading_precisely").as_bool();
 
   bool debug = false;
   if (!this->has_parameter("debug_logging")) {
@@ -457,7 +469,7 @@ void SlamToolbox::setROSInterfaces()
   scan_filter_sub_ =
     std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
       rclcpp_lifecycle::LifecycleNode>>(
-    shared_from_this().get(), scan_topic_, rclcpp::SensorDataQoS());
+    shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
     *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_,
@@ -489,7 +501,11 @@ void SlamToolbox::publishTransformLoop(
         msg.transform = tf2::toMsg(map_to_odom_);
         msg.child_frame_id = odom_frame_;
         msg.header.frame_id = map_frame_;
-        msg.header.stamp = scan_timestamp + transform_timeout_;
+        if (restamp_tf_) {
+          msg.header.stamp = now() + transform_timeout_;
+        } else {
+          msg.header.stamp = scan_timestamp + transform_timeout_;
+        }
         tfB_->sendTransform(msg);
       }
     }
@@ -748,6 +764,8 @@ bool SlamToolbox::shouldProcessScan(
   static double min_dist2 =
     smapper_->getMapper()->getParamMinimumTravelDistance() *
     smapper_->getMapper()->getParamMinimumTravelDistance();
+  static double min_rotation =
+    smapper_->getMapper()->getParamMinimumTravelHeadingInRadians();
   static int scan_ctr = 0;
   scan_ctr++;
 
@@ -774,9 +792,21 @@ bool SlamToolbox::shouldProcessScan(
     return false;
   }
 
-  // check moved enough, within 10% for correction error
+  // for initial stabilization
+  if (scan_ctr < 5) {
+    return false;
+  }
+
+  // check if the movement is enough
   const double dist2 = last_pose.SquaredDistance(pose);
-  if (dist2 < 0.8 * min_dist2 || scan_ctr < 5) {
+  if (check_min_dist_and_heading_precisely_) {
+    const double heading_diff =
+      fabs(math::NormalizeAngle(pose.GetHeading() - last_pose.GetHeading()));
+    if (dist2 < min_dist2 && heading_diff < min_rotation) {
+      return false;
+    }
+  } else if (dist2 < 0.8 * min_dist2) {
+    // within 10% for correction error, min heading is occasionally checked in the mapper
     return false;
   }
 

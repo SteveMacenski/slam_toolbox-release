@@ -52,7 +52,7 @@ An overview of how the map was generated is presented below:
 
 # Support and Contribution
 
-If you have any questions on use or configuration, please post your questions on [Robotics Stack Exchange](https://robotics.stackexchange.com) with the `slam` and `ros2` tags and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
+If you have any questions on use or configuration, please post your questions on [ROS Answers](answers.ros.org) and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
 
 If you're interested in contributing to this project in a substantial way, please file a public GitHub issue on your new feature / patch. If for some reason the development of this feature is sensitive, please email the maintainers at their email addresses listed in the `package.xml` file. 
 
@@ -226,6 +226,8 @@ The following settings and options are exposed to you. My default configuration 
 
 `scan_topic` - scan topic, *absolute* path, i.e. `/scan` not `scan`
 
+`restamp_tf` - Whether to restamp the TF messages with the current time or use the scan's message. Default False.
+
 `scan_queue_size` - The number of scan messages to queue up before throwing away old ones. Should always be set to 1 in async mode
 
 `use_map_saver` - Instantiate the map saver service and self-subscribe to the map topic
@@ -252,8 +254,6 @@ The following settings and options are exposed to you. My default configuration 
 
 `resolution` - Resolution of the 2D occupancy map to generate
 
-`min_laser_range` - Minimum laser range to use for 2D occupancy map rasterizing
-
 `max_laser_range` - Maximum laser range to use for 2D occupancy map rasterizing
 
 `minimum_time_interval` - The minimum duration of time between scans to be processed in synchronous mode
@@ -266,6 +266,10 @@ The following settings and options are exposed to you. My default configuration 
 
 `minimum_travel_distance` - Minimum distance of travel before processing a new scan
 
+`minimum_travel_heading` - Minimum changing in heading to justify an update.
+
+`check_min_dist_and_heading_precisely` - Whether to always check if either *`minimum_travel_distance`* or *`minimum_travel_heading`* is satisfied. With the default value *`false`*, the behavior suits most cases where, for example, rotational odometry is poor.
+
 `localization_on_configure` - Set to true to set the localization mode to localization during node on_configure transition. Set to false to set the localization mode to mapping instead. Only applies to `map_and_localization_slam_toolbox` node.
 
 ## Matcher Params
@@ -273,8 +277,6 @@ The following settings and options are exposed to you. My default configuration 
 `use_scan_matching` - whether to use scan matching to refine odometric pose (uh, why would you not?)
 
 `use_scan_barycenter` - Whether to use the barycenter or scan pose
-
-`minimum_travel_heading` - Minimum changing in heading to justify an update
 
 `scan_buffer_size` - The number of scans to buffer into a chain, also used as the number of scans in the circular buffer of localization mode
 
@@ -339,7 +341,7 @@ rosdep install -q -y -r --from-paths src --ignore-src
 Or install via apt
 
 ```
-apt install ros-eloquent-slam-toolbox
+apt install ros-jazzy-slam-toolbox
 ```
 
 Run your colcon build procedure of choice.
