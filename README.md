@@ -1,3 +1,26 @@
+## slam_toolbox (lyrical) - 2.10.0-1
+
+The packages in the `slam_toolbox` repository were released into the `lyrical` distro by running `/usr/bin/bloom-release slam_toolbox --track lyrical --rosdistro lyrical --edit` on `Tue, 21 Jul 2026 22:03:33 -0000`
+
+The `slam_toolbox` package was released.
+
+Version of package(s) in repository `slam_toolbox`:
+
+- upstream repository: https://github.com/SteveMacenski/slam_toolbox.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `2.10.0-1`
+
+Versions of tools used:
+
+- bloom version: `0.14.3`
+- catkin_pkg version: `1.1.0`
+- rosdep version: `0.26.0`
+- rosdistro version: `1.0.1`
+- vcstools version: `0.1.42`
+
+
 ## slam_toolbox (jazzy) - 2.8.5-1
 
 The packages in the `slam_toolbox` repository were released into the `jazzy` distro by running `/usr/bin/bloom-release slam_toolbox --rosdistro jazzy --track jazzy` on `Wed, 29 Apr 2026 22:40:11 -0000`
