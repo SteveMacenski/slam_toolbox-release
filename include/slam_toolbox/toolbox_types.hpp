@@ -24,9 +24,9 @@
 #include <vector>
 
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2/transform_datatypes.h"
+#include "tf2/transform_datatypes.hpp"
 
 #include "karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_msgs.hpp"

@@ -1256,7 +1256,7 @@ protected:
 #endif
         kt_double z = exp(-0.5 * pow(distanceFromMean / m_SmearDeviation, 2));
 
-        kt_int32u kernelValue = static_cast<kt_int32u>(math::Round(z * GridStates_Occupied));
+        kt_int32u kernelValue = static_cast<kt_int32u>(math::Round(z * static_cast<kt_double>(GridStates_Occupied)));
         assert(math::IsUpTo(kernelValue, static_cast<kt_int32u>(255)));
 
         int kernelArrayIndex = (i + halfKernel) + m_KernelSize * (j + halfKernel);
@@ -2377,8 +2377,13 @@ protected:
     ar & BOOST_SERIALIZATION_NVP(m_pGraph);
     std::cout << "Mapper <- m_pMapperSensorManager\n";
     ar & BOOST_SERIALIZATION_NVP(m_pMapperSensorManager);
-    std::cout << "Mapper <- m_Listeners\n";
-    ar & BOOST_SERIALIZATION_NVP(m_Listeners);
+    // m_Listeners is intentionally NOT serialized. The only listener type
+    // slam_toolbox registers, LoopClosureListener, wraps a live ROS publisher
+    // and std::function and has no BOOST_CLASS_EXPORT, so serializing it
+    // throws "unregistered class" and aborts both SaveToFile() and
+    // LoadFromFile() (this function is used for both). Listeners are
+    // re-registered by the owning node on activation, so skipping them here
+    // loses nothing.
     ar & BOOST_SERIALIZATION_NVP(m_pUseScanMatching);
     ar & BOOST_SERIALIZATION_NVP(m_pUseScanBarycenter);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumTimeInterval);

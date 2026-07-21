@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>slam_toolbox</name>
-  <version>2.8.5</version>
+  <version>2.10.0</version>
   <description>
      This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
   </description>
@@ -29,6 +29,7 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>suitesparse</build_depend>
   <build_depend>liblapack-dev</build_depend>
+  <build_depend>libomp-dev</build_depend>
   <build_depend>libceres-dev</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tbb</build_depend>
@@ -45,6 +46,7 @@
   <depend>rviz_default_plugins</depend>
   <depend>rviz_ogre_vendor</depend>
   <depend>rviz_rendering</depend>
+  <depend>geometry_msgs</depend>
   <exec_depend>eigen</exec_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>message_filters</exec_depend>
@@ -61,17 +63,20 @@
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>suitesparse</exec_depend>
   <exec_depend>liblapack-dev</exec_depend>
+  <exec_depend>libomp-dev</exec_depend>
   <exec_depend>libceres-dev</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>tbb</exec_depend>
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-widgets</exec_depend>
+  <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>rosidl_default_generators</exec_depend>
   <exec_depend>lifecycle_msgs</exec_depend>
   <exec_depend>bondcpp</exec_depend>
   <exec_depend>bond</exec_depend>
   <exec_depend>rclcpp_lifecycle</exec_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
 
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>

@@ -35,8 +35,6 @@ This project contains the ability to do most everything any other available SLAM
 - Map serialization and lossless data storage
 - ... more but those are the highlights 
 
-For running on live production robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
-
 This package has been benchmarked mapping building at 5x+ real-time up to about 30,000 sq. ft. and 3x real-time up to about 60,000 sq. ft. with the largest area (I'm aware of) used was a 200,000 sq. ft. building in synchronous mode (i.e. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
 The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/) in Oakland, California. Thanks to [Silicon Valley Robotics](https://svrobo.org/) & Circuit Launch for being a testbed for some of this work.
@@ -52,7 +50,7 @@ An overview of how the map was generated is presented below:
 
 # Support and Contribution
 
-If you have any questions on use or configuration, please post your questions on [ROS Answers](answers.ros.org) and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
+If you have any questions on use or configuration, please post your questions on [Robotics Stack Exchange](https://robotics.stackexchange.com) with the `slam` and `ros2` tags and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
 
 If you're interested in contributing to this project in a substantial way, please file a public GitHub issue on your new feature / patch. If for some reason the development of this feature is sensitive, please email the maintainers at their email addresses listed in the `package.xml` file. 
 
@@ -70,6 +68,19 @@ If you have previously existing serialized files (e.g. not `pgm` maps, but `.pos
 - Take the raw data and rerun the SLAM sessions to get a new serialized file with the right content
 
 More of the conversation can be seen on tickets #198 and #281. I apologize for the inconvenience, however this solves a very large bug that was impacting a large number of users. I've worked hard to make sure there's a viable path forward for everyone.
+
+# Multi-Robot SLAM
+
+`decentralized_multirobot_slam_toolbox_node` extends slam_toolbox for multi-robot mapping. Each robot runs its own slam_toolbox instance under a unique namespace; localized scans are exchanged to align peer pose graphs over a shared global frame.
+
+👉 See **[docs/decentralized_multi_robot_slam.md](docs/decentralized_multi_robot_slam.md)** for details on:
+- Multi-Robot mapping
+- Decentralized multi-robot slam architecture
+- How to set up the shared global frame
+- What topics are shared (and why)
+- Example launch files & demo package
+
+![multirobot_slam](images/decentralized_multirobot/multi-robot_mapping.gif?raw=true "Multi-Robot SLAM")
 
 # LifeLong Mapping
 
@@ -110,6 +121,7 @@ To enable, set `mode: localization` in the configuration file to allow for the C
 To minimize the amount of changes required for moving to this mode over AMCL, we also expose a subscriber to the `/initialpose` topic used by AMCL to relocalize to a position, which also hooks up to the `2D Pose Estimation` tool in RVIZ. This way you can enter localization mode with our approach but continue to use the same API as you expect from AMCL for ease of integration.
 
 In summary, this approach I dub `elastic pose-graph localization` is where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using the scan matcher, but not update the underlaying map long-term should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The lifelong mapping/continuous slam mode above will do better if you'd like to modify the underlying graph while moving. This method of localization might not be suitable for all applications, it does require quite a bit of tuning for your particular robot and needs high quality odometry. If in doubt, you're always welcome to use other 2D map localizers in the ecosystem like AMCL. For most beginners or users looking for a good out of the box experience, I'd recommend AMCL. 
+
 
 ## Tools 
 
@@ -181,6 +193,9 @@ The following are the services/topics that are exposed for use. See the rviz plu
 |-----|----|----|
 | map  | `nav_msgs/OccupancyGrid` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
 | pose | `geometry_msgs/PoseWithCovarianceStamped` | pose of the base_frame in the configured map_frame along with the covariance calculated from the scan match |
+| /slam_toolbox/new_node_event | `slam_toolbox/NewNodeEvent` | Event message triggered when a new pose graph node is added. Contains node ID, timestamp, pose, and all incoming edges (including sequential and loop closure edges) for incremental graph updates. |
+| /slam_toolbox/loop_closure_event | `slam_toolbox/LoopClosureEvent` | Event message triggered when a loop closure is detected and processed. Contains only a timestamp. |
+| /slam_toolbox/pose_graph | `slam_toolbox/PoseGraph` | Full pose graph message containing all nodes, edges, and poses (no sensor data). Published **only on loop closure events**. For incremental updates between loop closures, use `new_node_event` to avoid the overhead of republishing the entire graph. |
 
 ## Exposed Services
 
@@ -253,6 +268,8 @@ The following settings and options are exposed to you. My default configuration 
 `yaw_covariance_scale` - Amount to scale yaw covariance when publishing pose from scan match.  See description of position_covariance_scale.  Default: 1.0
 
 `resolution` - Resolution of the 2D occupancy map to generate
+
+`min_laser_range` - Minimum laser range to use for 2D occupancy map rasterizing
 
 `max_laser_range` - Maximum laser range to use for 2D occupancy map rasterizing
 
@@ -341,7 +358,7 @@ rosdep install -q -y -r --from-paths src --ignore-src
 Or install via apt
 
 ```
-apt install ros-jazzy-slam-toolbox
+apt install ros-eloquent-slam-toolbox
 ```
 
 Run your colcon build procedure of choice.
@@ -353,26 +370,6 @@ You can run via `ros2 launch slam_toolbox online_sync_launch.py`
 ## NanoFlann!
 
 In order to do some operations quickly for continued mapping and localization, I make liberal use of NanoFlann (shout out!).
-
-
-## Brief incursion into snaps
-
-Snap are completely isolated containerized packages that one can run through the Canonical organization on a large number of Linux distributions. They're similar to Docker containers but it doesn't share the kernel or any of the libraries, and rather has everything internal as essentially a separate partitioned operating system based on Ubuntu Core. 
-
-We package up slam toolbox in this way for a nice multiple-on speed up in execution from a couple of pretty nuanced reasons in this particular project, but generally speaking you shouldn't expect a speedup from a snap. 
-
-Since Snaps are totally isolated and there's no override flags like in Docker, there's only a couple of fixed directories that both the snap and the host system can write and read from, including SNAP_COMMON (usually in `/var/snap/[snap name]/common`). Therefore, this is the place that if you're serializing and deserializing maps, you need to have them accessible to that directory. 
-
-You can optionally store all your serialized maps there, move maps there as needed, take maps from there after serialization, or do my favorite option and `link` the directories with `ln` to where ever you normally store your maps and you're wanting to dump your serialized map files. 
-
-Example of `ln`:
-```
-#           Source                           Linked
-sudo ln -s /home/steve/maps/serialized_map/ /var/snap/slam-toolbox/common
-```
-
-and then all you have to do when you specify a map to use is set the filename to `slam-toolbox/map_name` and it should work no matter if you're running in a snap, docker, or on bare metal. The `-s` makes a symbol link so rather than `/var/snap/slam-toolbox/common/*` containing the maps, `/var/snap/slam-toolbox/common/serialized_map/*` will. By default on bare metal, the maps will be saved in `.ros`
-
 
 ## More Gifs!
 

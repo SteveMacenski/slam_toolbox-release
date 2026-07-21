@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.20)
 project(slam_toolbox)
 
 set(CMAKE_BUILD_TYPE Release) #None, Debug, Release, RelWithDebInfo, MinSizeRel
@@ -6,6 +6,15 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
 cmake_policy(SET CMP0077 NEW)
+
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
+if(MSVC)
+  add_compile_definitions(_USE_MATH_DEFINES)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
@@ -34,7 +43,10 @@ find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(interactive_markers REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+
 find_package(rclcpp_components REQUIRED)
 
 #karto_sdk lib
@@ -66,7 +78,7 @@ set(dependencies
   rviz_ogre_vendor
   rviz_rendering
   interactive_markers
-  Qt5
+  Qt${QT_VERSION_MAJOR}
   rclcpp_components
 )
 
@@ -74,6 +86,7 @@ set(libraries
     toolbox_common
     SlamToolboxPlugin
     ceres_solver_plugin
+    decentralized_multirobot_slam_toolbox
     async_slam_toolbox
     sync_slam_toolbox
     localization_slam_toolbox
@@ -87,11 +100,12 @@ find_package(CHOLMOD REQUIRED)
 find_package(CSparse REQUIRED)
 find_package(G2O REQUIRED)
 find_package(LAPACK REQUIRED)
+find_package(OpenMP REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_definitions(-DQT_NO_KEYWORDS)
-find_package(Boost REQUIRED system serialization filesystem thread)
+find_package(Boost REQUIRED serialization filesystem thread)
 
 include_directories(include lib/karto_sdk/include
                             ${EIGEN3_INCLUDE_DIRS}
@@ -103,6 +117,7 @@ include_directories(include lib/karto_sdk/include
 add_definitions(${EIGEN3_DEFINITIONS})
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  msg/LocalizedLaserScan.msg
   srv/Pause.srv
   srv/Reset.srv
   srv/ClearQueue.srv
@@ -114,49 +129,133 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   srv/AddSubmap.srv
   srv/DeserializePoseGraph.srv
   srv/SerializePoseGraph.srv
-  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs nav_msgs visualization_msgs
+  msg/NewNodeEvent.msg
+  msg/LoopClosureEvent.msg
+  msg/GraphNode.msg
+  msg/GraphEdge.msg
+  msg/PoseGraph.msg
+  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs nav_msgs visualization_msgs sensor_msgs
 )
 
 #### rviz Plugin
-qt5_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
+qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
 add_library(SlamToolboxPlugin SHARED
   rviz_plugin/slam_toolbox_rviz_plugin.cpp
   ${MOC_FILES})
-ament_target_dependencies(SlamToolboxPlugin
- ${dependencies}
+target_link_libraries(SlamToolboxPlugin PUBLIC
+  ${bond_TARGETS}
+  ${builtin_interfaces_TARGETS}
+  ${lifecycle_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${std_srvs_TARGETS}
+  ${visualization_msgs_TARGETS}
+  bondcpp::bondcpp
+  interactive_markers::interactive_markers
+  message_filters::message_filters
+  pluginlib::pluginlib
+  Qt${QT_VERSION_MAJOR}::Widgets
+  rclcpp::rclcpp
+  rclcpp_components::component
+  rclcpp_components::component_manager
+  rclcpp_lifecycle::rclcpp_lifecycle
+  rviz_common::rviz_common
+  rviz_default_plugins::rviz_default_plugins
+  rviz_rendering::rviz_rendering
+  sensor_msgs::sensor_msgs_library
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::static_transform_broadcaster_node
+  tf2_ros::tf2_ros
+  tf2_sensor_msgs::tf2_sensor_msgs
 )
 target_include_directories(SlamToolboxPlugin PUBLIC
-  ${Qt5Widgets_INCLUDE_DIRS}
   ${OGRE_INCLUDE_DIRS}
 )
-target_link_libraries(SlamToolboxPlugin ${QT_LIBRARIES} rviz_common::rviz_common)
+target_link_libraries(SlamToolboxPlugin PUBLIC ${QT_LIBRARIES} rviz_common::rviz_common)
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(SlamToolboxPlugin "${cpp_typesupport_target}")
+target_link_libraries(SlamToolboxPlugin PUBLIC "${cpp_typesupport_target}")
 target_compile_definitions(SlamToolboxPlugin PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 target_compile_definitions(SlamToolboxPlugin PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
 pluginlib_export_plugin_description_file(rviz_common rviz_plugins.xml)
 
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
-ament_target_dependencies(ceres_solver_plugin ${dependencies})
-target_link_libraries(ceres_solver_plugin ${CERES_LIBRARIES}
+target_link_libraries(ceres_solver_plugin PUBLIC
+  ${bond_TARGETS}
+  ${builtin_interfaces_TARGETS}
+  ${lifecycle_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${std_srvs_TARGETS}
+  ${visualization_msgs_TARGETS}
+  bondcpp::bondcpp
+  interactive_markers::interactive_markers
+  message_filters::message_filters
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_components::component
+  rclcpp_components::component_manager
+  rclcpp_lifecycle::rclcpp_lifecycle
+  rviz_common::rviz_common
+  rviz_default_plugins::rviz_default_plugins
+  rviz_rendering::rviz_rendering
+  sensor_msgs::sensor_msgs_library
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::static_transform_broadcaster_node
+  tf2_ros::tf2_ros
+  tf2_sensor_msgs::tf2_sensor_msgs
+)
+target_link_libraries(ceres_solver_plugin PUBLIC ${CERES_LIBRARIES}
                                           ${Boost_LIBRARIES}
                                           kartoSlamToolbox
 )
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(ceres_solver_plugin "${cpp_typesupport_target}")
+target_link_libraries(ceres_solver_plugin PUBLIC "${cpp_typesupport_target}")
 pluginlib_export_plugin_description_file(slam_toolbox solver_plugins.xml)
 
 #### Tool lib for mapping
-add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
-ament_target_dependencies(toolbox_common
-  ${dependencies}
+add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/loop_closure_listener.cpp src/laser_utils.cpp src/slam_mapper.cpp)
+target_link_libraries(toolbox_common PUBLIC
+  ${bond_TARGETS}
+  ${builtin_interfaces_TARGETS}
+  ${lifecycle_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${std_srvs_TARGETS}
+  ${visualization_msgs_TARGETS}
+  bondcpp::bondcpp
+  interactive_markers::interactive_markers
+  message_filters::message_filters
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_components::component
+  rclcpp_components::component_manager
+  rclcpp_lifecycle::rclcpp_lifecycle
+  rviz_common::rviz_common
+  rviz_default_plugins::rviz_default_plugins
+  rviz_rendering::rviz_rendering
+  sensor_msgs::sensor_msgs_library
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::static_transform_broadcaster_node
+  tf2_ros::tf2_ros
+  tf2_sensor_msgs::tf2_sensor_msgs
 )
-target_link_libraries(toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
+target_link_libraries(toolbox_common PUBLIC kartoSlamToolbox ${Boost_LIBRARIES})
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(toolbox_common "${cpp_typesupport_target}")
+target_link_libraries(toolbox_common PUBLIC "${cpp_typesupport_target}")
 
 #### Mapping executibles
+add_library(decentralized_multirobot_slam_toolbox src/slam_toolbox_decentralized_multirobot.cpp)
+target_link_libraries(decentralized_multirobot_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
+add_executable(decentralized_multirobot_slam_toolbox_node src/slam_toolbox_decentralized_multirobot_node.cpp)
+target_link_libraries(decentralized_multirobot_slam_toolbox_node decentralized_multirobot_slam_toolbox)
+
 add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
 target_link_libraries(async_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp)
@@ -182,6 +281,19 @@ target_link_libraries(map_and_localization_slam_toolbox localization_slam_toolbo
 add_executable(map_and_localization_slam_toolbox_node src/experimental/slam_toolbox_map_and_localization_node.cpp)
 target_link_libraries(map_and_localization_slam_toolbox_node map_and_localization_slam_toolbox)
 
+if(MSVC)
+  foreach(
+    target
+    decentralized_multirobot_slam_toolbox_node
+    async_slam_toolbox_node
+    sync_slam_toolbox_node
+    localization_slam_toolbox_node
+    lifelong_slam_toolbox_node
+    map_and_localization_slam_toolbox_node)
+    target_compile_options(${target} PRIVATE /F40000000)
+  endforeach()
+endif()
+
 #### Merging maps tool
 add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
@@ -203,7 +315,8 @@ rclcpp_components_register_nodes(lifelong_slam_toolbox "slam_toolbox::LifelongSl
 rclcpp_components_register_nodes(map_and_localization_slam_toolbox "slam_toolbox::MapAndLocalizationSlamToolbox")
 
 #### Install
-install(TARGETS async_slam_toolbox_node
+install(TARGETS decentralized_multirobot_slam_toolbox_node
+                async_slam_toolbox_node
                 sync_slam_toolbox_node
                 localization_slam_toolbox_node
                 map_and_localization_slam_toolbox_node
@@ -244,5 +357,6 @@ install(FILES solver_plugins.xml rviz_plugins.xml
 ament_export_include_directories(include)
 ament_export_libraries(${libraries} kartoSlamToolbox)
 ament_export_dependencies(${dependencies})
+ament_export_dependencies(${dependencies} rosidl_default_runtime)
 ament_export_targets(SlamToolboxPlugin HAS_LIBRARY_TARGET)
 ament_package()

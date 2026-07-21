@@ -21,7 +21,9 @@
 #include <string>
 #include <chrono>
 #include "slam_toolbox/slam_toolbox_common.hpp"
+#include "rclcpp/qos.hpp"
 #include "slam_toolbox/serialization.hpp"
+#include "slam_toolbox/loop_closure_listener.hpp"
 
 namespace slam_toolbox
 {
@@ -51,6 +53,14 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
     this->declare_parameter(
       "stack_size_to_use", rclcpp::ParameterType::PARAMETER_INTEGER, descriptor);
     if (this->get_parameter("stack_size_to_use", stack_size)) {
+#ifdef _WIN32
+      if (stack_size != 40'000'000) {
+        RCLCPP_WARN(
+          get_logger(),
+          "Dynamic stack size configuration is unavailable on Windows; "
+          "node was built with stack size 40000000");
+      }
+#else
       RCLCPP_INFO(get_logger(), "Node using stack size %i", (int)stack_size);
       const rlim_t max_stack_size = stack_size;
       struct rlimit stack_limit;
@@ -59,6 +69,7 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
         stack_limit.rlim_cur = stack_size;
       }
       setrlimit(RLIMIT_STACK, &stack_limit);
+#endif
     }
   }
   // server side never times out from lifecycle manager
@@ -149,6 +160,18 @@ CallbackReturn SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
   sst_->on_activate();
   sstm_->on_activate();
   pose_pub_->on_activate();
+  pose_graph_pub_->on_activate();
+  new_node_event_pub_->on_activate();
+  loop_closure_event_pub_->on_activate();
+
+  loop_closure_listener_ =
+    std::make_unique<slam_toolbox::LoopClosureListener>(
+      loop_closure_event_pub_,
+      this->get_clock(),
+      std::bind(&SlamToolbox::requestPoseGraphPublish, this)
+    );
+  smapper_->getMapper()->AddListener(loop_closure_listener_.get());
+
   reprocessing_transform_.setIdentity();
 
   double transform_publish_period = 0.05;
@@ -181,9 +204,17 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
     threads_[i].reset();
   }
   threads_.clear();
+  if (smapper_ && smapper_->getMapper() && loop_closure_listener_) {
+    smapper_->getMapper()->RemoveListener(loop_closure_listener_.get());
+  }
+  loop_closure_listener_.reset();
+
   sst_->on_deactivate();
   sstm_->on_deactivate();
   pose_pub_->on_deactivate();
+  pose_graph_pub_->on_deactivate();
+  new_node_event_pub_->on_deactivate();
+  loop_closure_event_pub_->on_deactivate();
 
   // reset interfaces
   scan_filter_.reset();
@@ -195,6 +226,9 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
   sstm_.reset();
   sst_.reset();
   pose_pub_.reset();
+  pose_graph_pub_.reset();
+  new_node_event_pub_.reset();
+  loop_closure_event_pub_.reset();
   ssReset_.reset();
 
   if (use_lifecycle_manager_) {
@@ -439,7 +473,7 @@ void SlamToolbox::setROSInterfaces()
 /*****************************************************************************/
 {
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "pose", 10);
+    "pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
     map_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
@@ -465,11 +499,17 @@ void SlamToolbox::setROSInterfaces()
     "slam_toolbox/reset",
     std::bind(&SlamToolbox::resetCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  pose_graph_pub_ = this->create_publisher<slam_toolbox::msg::PoseGraph>(
+    "slam_toolbox/pose_graph",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  new_node_event_pub_ = this->create_publisher<slam_toolbox::msg::NewNodeEvent>(
+    "slam_toolbox/new_node_event", 10);
+  loop_closure_event_pub_ = this->create_publisher<slam_toolbox::msg::LoopClosureEvent>(
+    "slam_toolbox/loop_closure_event", 10);
 
   scan_filter_sub_ =
-    std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
-      rclcpp_lifecycle::LifecycleNode>>(
-    shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
+    std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+    shared_from_this().get(), scan_topic_, rclcpp::SensorDataQoS());
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
     *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_,
@@ -542,16 +582,29 @@ void SlamToolbox::publishVisualizations()
       boost::mutex::scoped_lock lock(smapper_mutex_);
       closure_assistant_->publishGraph();
     }
+
+    // Check if pose graph publishing was requested (e.g., after loop closure)
+    if (publish_pose_graph_requested_.load()) {
+      // Try to acquire mutex with try_lock
+      boost::unique_lock<boost::mutex> lock(smapper_mutex_, boost::defer_lock);
+      if (lock.try_lock()) {
+        // Double-check after acquiring mutex to ensure request wasn't already processed
+        if (publish_pose_graph_requested_.exchange(false)) {
+          publishPoseGraph();
+        }
+      }
+      // If try_lock fails, flag remains true for next iteration
+    }
+
     r.sleep();
   }
 }
-
 /*****************************************************************************/
 void SlamToolbox::loadPoseGraphByParams()
 /*****************************************************************************/
 {
   std::string filename;
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   bool dock = false;
   if (shouldStartWithPoseGraph(filename, pose, dock)) {
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req =
@@ -575,7 +628,7 @@ void SlamToolbox::loadPoseGraphByParams()
 /*****************************************************************************/
 bool SlamToolbox::shouldStartWithPoseGraph(
   std::string & filename,
-  geometry_msgs::msg::Pose2D & pose, bool & start_at_dock)
+  geometry_msgs::msg::Pose & pose, bool & start_at_dock)
 /*****************************************************************************/
 {
   // if given a map to load at run time, do it.
@@ -601,13 +654,14 @@ bool SlamToolbox::shouldStartWithPoseGraph(
         RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Incorrect "
           "number of arguments for map starting pose. Must be in format: "
           "[x, y, theta]. Starting at the origin");
-        pose.x = 0.;
-        pose.y = 0.;
-        pose.theta = 0.;
+        pose = geometry_msgs::msg::Pose();
       } else {
-        pose.x = read_pose[0];
-        pose.y = read_pose[1];
-        pose.theta = read_pose[2];
+        pose.position.x = read_pose[0];
+        pose.position.y = read_pose[1];
+        pose.position.z = 0.0;
+        tf2::Quaternion q;
+        q.setRPY(0.0, 0.0, read_pose[2]);
+        pose.orientation = tf2::toMsg(q);
       }
     } else if (!start_at_dock) {
       RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Map starting "
@@ -829,14 +883,28 @@ LocalizedRangeScan * SlamToolbox::addScan(
   LaserRangeFinder * laser,
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
   Pose2 & odom_pose)
+{
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  if (!laser) {
+    RCLCPP_WARN(get_logger(), "SlamToolbox: addScan() called without a laser, "
+      "ignoring scan.");
+    return nullptr;
+  }
+
+  return addScanImpl(laser, scan, odom_pose);
+}
+
+/*****************************************************************************/
+LocalizedRangeScan * SlamToolbox::addScanImpl(
+  LaserRangeFinder * laser,
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
+  Pose2 & odom_pose)
 /*****************************************************************************/
 {
   // get our localized range scan
   LocalizedRangeScan * range_scan = getLocalizedRangeScan(
     laser, scan, odom_pose);
 
-  // Add the localized range scan to the smapper
-  boost::mutex::scoped_lock lock(smapper_mutex_);
   bool processed = false, update_reprocessing_transform = false;
 
   Matrix3 covariance;
@@ -880,6 +948,7 @@ LocalizedRangeScan * SlamToolbox::addScan(
     dataset_->Add(range_scan);
 
     publishPose(range_scan->GetCorrectedPose(), covariance, scan->header.stamp);
+    publishNewNodeEvent(range_scan);
   } else {
     delete range_scan;
     range_scan = nullptr;
@@ -911,6 +980,200 @@ void SlamToolbox::publishPose(
   pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;      // yaw
 
   pose_pub_->publish(pose_msg);
+}
+
+/*****************************************************************************/
+void SlamToolbox::requestPoseGraphPublish()
+/*****************************************************************************/
+{
+  // Set the flag to request pose graph publishing via timer
+  publish_pose_graph_requested_.store(true);
+}
+
+/*****************************************************************************/
+void SlamToolbox::publishPoseGraph()
+/*****************************************************************************/
+{
+  if (pose_graph_pub_->get_subscription_count() == 0) {
+    return;
+  }
+
+  auto msg = std::make_unique<slam_toolbox::msg::PoseGraph>();
+
+  auto * graph = smapper_->getMapper()->GetGraph();
+  if (!graph) return;
+
+  msg->header.stamp = this->get_clock()->now();
+  msg->header.frame_id = map_frame_;
+
+  // Use const reference to avoid copying the entire vertex map
+  const VerticeMap & mapper_vertices = graph->GetVertices();
+
+  // Reserve space for nodes to avoid reallocation
+  size_t total_nodes = 0;
+  for (const auto& vertex_map : mapper_vertices) {
+    total_nodes += vertex_map.second.size();
+  }
+  msg->nodes.reserve(total_nodes);
+
+  // Populate nodes - use const references and cache repeated calls
+  for (const auto& vertex_map : mapper_vertices) {
+    for (const auto& vertex : vertex_map.second) {
+      if (!vertex.second) { continue; }
+      const auto * lrs = vertex.second->GetObject();
+      if (!lrs) { continue; }
+
+      slam_toolbox::msg::GraphNode node_msg;
+      node_msg.node_id = lrs->GetUniqueId();
+
+      // Cache the corrected pose to avoid multiple function calls
+      const karto::Pose2 & corrected_pose = lrs->GetCorrectedPose();
+      node_msg.pose.position.x = corrected_pose.GetX();
+      node_msg.pose.position.y = corrected_pose.GetY();
+      node_msg.pose.position.z = 0.0;
+
+      tf2::Quaternion quat;
+      quat.setRPY(0.0, 0.0, corrected_pose.GetHeading());
+      node_msg.pose.orientation = tf2::toMsg(quat);
+
+      msg->nodes.push_back(std::move(node_msg));
+    }
+  }
+
+  // Use const reference to avoid copying the edge vector
+  const EdgeVector & mapper_edges = graph->GetEdges();
+
+  // Reserve space for edges to avoid reallocation
+  msg->edges.reserve(mapper_edges.size());
+
+  // Populate edges - use const references and minimize dynamic_cast
+  for (auto * edge : mapper_edges) {
+    if (!edge) { continue; }
+
+    auto * src = edge->GetSource();
+    auto * dst = edge->GetTarget();
+    if (!src || !dst) { continue; }
+
+    auto * src_obj = src->GetObject();
+    auto * dst_obj = dst->GetObject();
+    if (!src_obj || !dst_obj) { continue; }
+
+    karto::EdgeLabel * base_label = edge->GetLabel();
+    if (!base_label) { continue; }
+
+    // Dynamic cast is expensive - only do it once per edge
+    auto * link_info = dynamic_cast<karto::LinkInfo *>(base_label);
+    if (!link_info) { continue; }
+
+    slam_toolbox::msg::GraphEdge edge_msg;
+    edge_msg.source_id = src_obj->GetUniqueId();
+    edge_msg.target_id = dst_obj->GetUniqueId();
+
+    // Cache the relative pose
+    const karto::Pose2 & rel_pose = link_info->GetPoseDifference();
+    edge_msg.relative_pose.position.x = rel_pose.GetX();
+    edge_msg.relative_pose.position.y = rel_pose.GetY();
+    edge_msg.relative_pose.position.z = 0.0;
+
+    tf2::Quaternion quat;
+    quat.setRPY(0.0, 0.0, rel_pose.GetHeading());
+    edge_msg.relative_pose.orientation = tf2::toMsg(quat);
+
+    // Cache the covariance matrix
+    const karto::Matrix3 & cov = link_info->GetCovariance();
+    for (int r = 0; r < 3; ++r) {
+      for (int c = 0; c < 3; ++c) {
+        edge_msg.covariance[r * 3 + c] = cov(r, c);
+      }
+    }
+
+    msg->edges.push_back(std::move(edge_msg));
+  }
+
+  pose_graph_pub_->publish(std::move(msg));
+}
+
+/*****************************************************************************/
+void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
+/*****************************************************************************/
+{
+  if (!new_node_event_pub_ || !lrs) {
+    return;
+  }
+
+  slam_toolbox::msg::NewNodeEvent ev;
+  ev.stamp = scan_header.stamp;
+  ev.new_node_id = lrs->GetUniqueId();
+
+  // Cache the corrected pose to avoid multiple function calls
+  const karto::Pose2 & corrected_pose = lrs->GetCorrectedPose();
+  ev.pose.position.x = corrected_pose.GetX();
+  ev.pose.position.y = corrected_pose.GetY();
+  ev.pose.position.z = 0.0;
+
+  tf2::Quaternion quat;
+  quat.setRPY(0.0, 0.0, corrected_pose.GetHeading());
+  ev.pose.orientation = tf2::toMsg(quat);
+
+  auto * graph = smapper_->getMapper()->GetGraph();
+  if (graph) {
+    // Get all edges from the graph
+    const EdgeVector & all_edges = graph->GetEdges();
+
+    // Find the sequential incoming edge to the new node (where target is the new node)
+    for (auto it = all_edges.rbegin(); it != all_edges.rend(); ++it) {
+      auto * edge = *it;
+      if (!edge) { continue; }
+
+      auto * target_vertex = edge->GetTarget();
+      if (!target_vertex) { continue; }
+
+      auto * target_scan = target_vertex->GetObject();
+      if (!target_scan) { continue; }
+
+      // Check if this edge's target is the new node
+      if (target_scan->GetUniqueId() == ev.new_node_id) {
+        auto * source_vertex = edge->GetSource();
+        if (!source_vertex) { continue; }
+
+        auto * source_scan = source_vertex->GetObject();
+        if (!source_scan) { continue; }
+
+        if (source_scan->GetUniqueId() == ev.new_node_id - 1) {
+          // Populate the single edge for the new node event
+          ev.edge.source_id = source_scan->GetUniqueId();
+          ev.edge.target_id = target_scan->GetUniqueId();
+
+          karto::EdgeLabel * edge_label = edge->GetLabel();
+          if (!edge_label) { continue; }
+
+          auto * link_info = dynamic_cast<karto::LinkInfo *>(edge_label);
+          if (!link_info) { continue; }
+
+          const karto::Pose2 & rel_pose = link_info->GetPoseDifference();
+          ev.edge.relative_pose.position.x = rel_pose.GetX();
+          ev.edge.relative_pose.position.y = rel_pose.GetY();
+          ev.edge.relative_pose.position.z = 0.0;
+
+          tf2::Quaternion edge_quat;
+          edge_quat.setRPY(0.0, 0.0, rel_pose.GetHeading());
+          ev.edge.relative_pose.orientation = tf2::toMsg(edge_quat);
+
+          const karto::Matrix3 & cov = link_info->GetCovariance();
+          for (int r = 0; r < 3; ++r) {
+            for (int c = 0; c < 3; ++c) {
+              ev.edge.covariance[r * 3 + c] = cov(r, c);
+            }
+          }
+
+          // Found the sequential incoming edge to the new node, exit loop
+          break;
+        }
+      }
+    }
+  }
+
+  new_node_event_pub_->publish(ev);
 }
 
 /*****************************************************************************/
@@ -1056,6 +1319,7 @@ bool SlamToolbox::deserializePoseGraphCallback(
   if (req->match_type == slam_toolbox::srv::DeserializePoseGraph::Request::UNSET) {
     RCLCPP_ERROR(get_logger(), "Deserialization called without valid"
       " processor type set. Undefined behavior!");
+    resp->result = slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_INVALID_PROCESSOR_TYPE;
     return false;
   }
 
@@ -1063,6 +1327,7 @@ bool SlamToolbox::deserializePoseGraphCallback(
 
   if (filename.empty()) {
     RCLCPP_WARN(get_logger(), "No map file given!");
+    resp->result = slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_INVALID_FILENAME;
     return true;
   }
 
@@ -1077,9 +1342,11 @@ bool SlamToolbox::deserializePoseGraphCallback(
   if (!serialization::read(filename, *mapper, *dataset, shared_from_this())) {
     RCLCPP_ERROR(get_logger(), "DeserializePoseGraph: Failed to read "
       "file: %s.", filename.c_str());
+    resp->result = slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_FAILED_TO_READ_FILE;
     return true;
   }
   RCLCPP_DEBUG(get_logger(), "DeserializePoseGraph: Successfully read file.");
+  resp->result = slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_SUCCESS;
 
   loadSerializedPoseGraph(mapper, dataset);
   updateMap();
@@ -1092,17 +1359,18 @@ bool SlamToolbox::deserializePoseGraphCallback(
       break;
     case procType::START_AT_GIVEN_POSE:
       processor_type_ = PROCESS_NEAR_REGION;
-      process_near_pose_ = std::make_unique<Pose2>(req->initial_pose.x,
-          req->initial_pose.y, req->initial_pose.theta);
+      process_near_pose_ = std::make_unique<Pose2>(req->initial_pose.position.x,
+          req->initial_pose.position.y, tf2::getYaw(req->initial_pose.orientation));
       break;
     case procType::LOCALIZE_AT_POSE:
       processor_type_ = PROCESS_LOCALIZATION;
-      process_near_pose_ = std::make_unique<Pose2>(req->initial_pose.x,
-          req->initial_pose.y, req->initial_pose.theta);
+      process_near_pose_ = std::make_unique<Pose2>(req->initial_pose.position.x,
+          req->initial_pose.position.y, tf2::getYaw(req->initial_pose.orientation));
       break;
     default:
       RCLCPP_FATAL(get_logger(),
         "Deserialization called without valid processor type set.");
+      resp->result = slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_INVALID_PROCESSOR_TYPE;
   }
 
   return true;
